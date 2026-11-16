@@ -10,7 +10,7 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from comun import (COLORES_SEGMENTO, ETIQUETAS, NOMBRE_CUENTAS_CLAVE, NOMBRES, barra_color, cargar_json,
-                   configurar_pagina, estilo_figura, libras, num, pct)
+                   configurar_pagina, estilo_figura, etiqueta_mes, libras, mostrar_estrategias, num, pct)
 
 configurar_pagina("Perfiles y estrategias", "🎯")
 st.title("Perfiles y estrategias")
@@ -19,19 +19,6 @@ datos = cargar_json("segmentos")
 segmentos = {g["id"]: g for g in datos["segmentos"]}
 cuentas = datos["cuentas_clave"]
 IDS = sorted(segmentos)
-FORMATO_BASE = {"ticket_mediano": lambda v: libras(v, 2), "ingresos_temporada": lambda v: libras(v, 2)}
-
-
-def linea_base(estrategia: dict) -> str:
-    formato = FORMATO_BASE.get(estrategia["indicador"], pct)
-    return formato(estrategia["linea_base"])
-
-
-def mostrar_estrategias(estrategias: list[dict]) -> None:
-    tabla = pd.DataFrame([{"Acción": e["accion"], "Momento": e["momento"], "KPI": e["kpi"],
-                           "Línea base actual": linea_base(e)} for e in estrategias])
-    st.dataframe(tabla, hide_index=True, column_config={
-        "Acción": st.column_config.TextColumn(width="large"), "KPI": st.column_config.TextColumn(width="medium")})
 
 
 # ------------------------------------------------------------------ Fichas
@@ -40,11 +27,11 @@ columnas = st.columns(len(IDS))
 for col, s in zip(columnas, IDS):
     g, ind = segmentos[s], segmentos[s]["indicadores"]
     with col.container(border=True):
-        st.markdown(barra_color(s) + f"**{g['nombre']}**", unsafe_allow_html=True)
+        st.markdown(barra_color(s) + f"<strong>{g['nombre']}</strong>", unsafe_allow_html=True)
         st.markdown(f"<span class='texto-secundario'>{g['descripcion']}</span>", unsafe_allow_html=True)
-        a, b = st.columns(2)
-        a.metric("Clientes", pct(ind["pct_clientes"]))
-        b.metric("Ingresos", pct(ind["pct_ingresos"]))
+        st.markdown(f"<div class='cifra-grande'>{pct(ind['pct_ingresos'])}</div>"
+                    f"<div class='texto-secundario'>de los ingresos con el {pct(ind['pct_clientes'])} de los clientes</div>",
+                    unsafe_allow_html=True)
         st.markdown(
             f"- Gasto mediano: **{libras(ind['monetary_mediano'])}**\n"
             f"- Ticket mediano: **{libras(ind['ticket_mediano'])}**\n"
@@ -56,7 +43,7 @@ for col, s in zip(columnas, IDS):
 
 ic = cuentas["indicadores"]
 with st.container(border=True):
-    st.markdown(barra_color(3) + f"**{NOMBRE_CUENTAS_CLAVE}** · subgrupo de {NOMBRES[3]}", unsafe_allow_html=True)
+    st.markdown(barra_color(3) + f"<strong>{NOMBRE_CUENTAS_CLAVE}</strong> · subgrupo de {NOMBRES[3]}", unsafe_allow_html=True)
     izq, der = st.columns([2, 3])
     with izq:
         a, b, c = st.columns(3)
@@ -105,7 +92,7 @@ tabla[NOMBRE_CUENTAS_CLAVE] = [cuentas["medianas"][v] for v in variables]
 extra = pd.DataFrame({NOMBRES[s]: {"% con devoluciones": segmentos[s]["indicadores"]["pct_devuelve"],
                                    "% facturas en sep–nov": segmentos[s]["indicadores"]["pct_facturas_temporada"]} for s in IDS})
 extra[NOMBRE_CUENTAS_CLAVE] = [ic["pct_devuelve"], ic["pct_facturas_temporada"]]
-st.dataframe(pd.concat([tabla, extra]).style.format("{:,.1f}"))
+st.dataframe(pd.concat([tabla, extra]).style.format("{:,.1f}", decimal=",", thousands="."))
 
 # ------------------------------------------------------------------ Estrategias
 st.subheader("Estrategias de marketing")
@@ -121,14 +108,17 @@ with pestanas[-1]:
 
 # ------------------------------------------------------------------ Estacionalidad y RFM
 st.subheader("Estacionalidad y coherencia con RFM")
-c1, c2 = st.columns(2)
+c1, c2 = st.container(), st.container()
 est = pd.DataFrame(datos["estacionalidad_pct_facturas"]).T
 est.index = [NOMBRES[int(i)] if i != "Total" else "Total" for i in est.index]
+est.columns = [etiqueta_mes(c) for c in est.columns]
 fig = go.Figure(go.Heatmap(z=est.values, x=est.columns, y=est.index, colorscale="Blues", text=est.round(1).values,
                            texttemplate="%{text}", hovertemplate="%{y} · %{x}: %{z:.1f} % de sus facturas<extra></extra>",
                            colorbar=dict(title="%")))
 fig.update_layout(title="% de las facturas de cada segmento por mes")
 fig.update_yaxes(autorange="reversed")
+fig.update_xaxes(type="category", tickangle=-45)
+fig.update_traces(textfont=dict(size=10))
 c1.plotly_chart(estilo_figura(fig, 380, leyenda=False), config={"displayModeBar": False})
 
 rfm = pd.DataFrame({NOMBRES[s]: segmentos[s]["composicion_rfm_pct"] for s in IDS}).T
@@ -147,7 +137,7 @@ with st.expander("Productos más comprados por segmento"):
     for col, s in zip(cols, IDS):
         col.markdown(f"**{NOMBRES[s]}**")
         col.dataframe(pd.DataFrame(segmentos[s]["productos_top_penetracion"]).rename(
-            columns={"descripcion": "Producto", "valor": "% clientes"}), hide_index=True,
-            column_config={"% clientes": st.column_config.NumberColumn(format="%.1f %%")})
+            columns={"descripcion": "Producto", "valor": "% clientes"}).style.format({"% clientes": "{:.1f} %"}, decimal=",", thousands="."),
+            hide_index=True)
     st.caption("Los productos estrella son casi los mismos en todos los segmentos: lo que los diferencia es cuánto, cada "
                "cuánto y qué variedad compran.")
