@@ -17,7 +17,7 @@ if str(RAIZ / "src") not in sys.path:
 from segmentacion import config  # noqa: E402
 from segmentacion.catalogo import CUENTAS_CLAVE, SEGMENTOS  # noqa: E402
 from segmentacion.prediccion import Artefactos, cargar_artefactos  # noqa: E402
-from segmentacion.visualizacion import COLOR_BORDE_CUENTA_CLAVE, COLORES_SEGMENTO  # noqa: E402
+from segmentacion.colores import COLOR_BORDE_CUENTA_CLAVE, COLORES_SEGMENTO  # noqa: E402
 
 # Colores de texto y superficie (los de serie nunca se usan para texto).
 TEXTO = "#0b0b0b"
