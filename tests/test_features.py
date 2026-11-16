@@ -151,6 +151,8 @@ def test_variables_cliente():
 from segmentacion.features import (  # noqa: E402
     calcular_vif,
     construir_preprocesador,
+    puntuar_quintil,
+    segmentar_rfm_quintiles,
 )
 
 
@@ -182,3 +184,24 @@ def test_preprocesador_solo_usa_objetos_de_sklearn_y_numpy():
     clases = {type(paso).__module__.split(".")[0] for _, paso in pre.steps}
     assert clases == {"sklearn"}
     assert "segmentacion" not in pickle.dumps(pre).decode("latin-1")
+
+
+def test_puntuar_quintil():
+    s = pd.Series(range(1, 11))
+    assert puntuar_quintil(s).tolist() == [1, 1, 2, 2, 3, 3, 4, 4, 5, 5]
+    assert puntuar_quintil(s, ascendente=False).tolist() == [5, 5, 4, 4, 3, 3, 2, 2, 1, 1]
+
+
+def test_segmentar_rfm_quintiles():
+    # 10 clientes: el 0 compró hace 1 día, 50 veces y gastó mucho; el 9 lo contrario.
+    rfm = pd.DataFrame({
+        "recency": [1, 2, 3, 4, 5, 6, 7, 8, 9, 300],
+        "frequency": [50, 40, 30, 20, 10, 5, 4, 3, 2, 1],
+        "monetary": [9000, 8000, 7000, 6000, 5000, 400, 300, 200, 100, 10],
+    })
+    seg = segmentar_rfm_quintiles(rfm)
+    assert seg.loc[0, ["R", "F", "M"]].tolist() == [5, 5, 5]
+    assert seg.loc[0, "segmento_rfm"] == "Campeones"
+    assert seg.loc[9, "RFM"] == "111"
+    assert seg.loc[9, "segmento_rfm"] == "Hibernando"
+    assert seg["segmento_rfm"].notna().all()

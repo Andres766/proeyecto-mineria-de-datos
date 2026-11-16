@@ -246,3 +246,49 @@ def construir_preprocesador(datos: pd.DataFrame, winsorizar: bool = True):
     pasos.append(("escalado", StandardScaler()))
     return Pipeline(pasos).fit(datos)
 
+
+# ---------------------------------------------------------------------------
+# Baseline: segmentación RFM clásica por quintiles
+# ---------------------------------------------------------------------------
+# Mapa de segmentos sobre las puntuaciones R y F (1-5), esquema clásico de RFM.
+# Cada entrada: (nombre, rango R, rango F), rangos inclusivos.
+MAPA_SEGMENTOS_RFM: list[tuple[str, tuple[int, int], tuple[int, int]]] = [
+    ("Campeones", (5, 5), (4, 5)),
+    ("Leales", (3, 4), (4, 5)),
+    ("Potenciales leales", (4, 5), (2, 3)),
+    ("Nuevos", (5, 5), (1, 1)),
+    ("Prometedores", (4, 4), (1, 1)),
+    ("Necesitan atención", (3, 3), (3, 3)),
+    ("A punto de dormir", (3, 3), (1, 2)),
+    ("En riesgo", (1, 2), (3, 4)),
+    ("No se pueden perder", (1, 2), (5, 5)),
+    ("Hibernando", (1, 2), (1, 2)),
+]
+
+
+def puntuar_quintil(serie: pd.Series, ascendente: bool = True) -> pd.Series:
+    """Puntúa de 1 a 5 por quintiles. Los empates se rompen por orden de aparición
+    (``rank(method="first")``) para que haya 5 grupos de igual tamaño aunque muchos
+    clientes compartan valor (p. ej. frequency = 1)."""
+    rango = serie.rank(method="first", ascending=ascendente)
+    return pd.qcut(rango, 5, labels=[1, 2, 3, 4, 5]).astype("int64")
+
+
+def segmentar_rfm_quintiles(rfm: pd.DataFrame) -> pd.DataFrame:
+    """Baseline RFM: puntuaciones R, F, M por quintiles y segmento según R y F.
+
+    R puntúa 5 a los más recientes (recency baja); F y M puntúan 5 a los valores altos.
+
+    Returns:
+        DataFrame con ``R``, ``F``, ``M``, ``RFM`` (texto, p. ej. "545") y ``segmento_rfm``.
+    """
+    salida = pd.DataFrame(index=rfm.index)
+    salida["R"] = puntuar_quintil(rfm["recency"], ascendente=False)
+    salida["F"] = puntuar_quintil(rfm["frequency"])
+    salida["M"] = puntuar_quintil(rfm["monetary"])
+    salida["RFM"] = salida["R"].astype(str) + salida["F"].astype(str) + salida["M"].astype(str)
+    salida["segmento_rfm"] = pd.NA
+    for nombre, (r_min, r_max), (f_min, f_max) in MAPA_SEGMENTOS_RFM:
+        mascara = salida["R"].between(r_min, r_max) & salida["F"].between(f_min, f_max) & salida["segmento_rfm"].isna()
+        salida.loc[mascara, "segmento_rfm"] = nombre
+    return salida
