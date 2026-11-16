@@ -81,14 +81,16 @@ with tab_buscar:
         a.metric("Clientes filtrados", num(len(vista)))
         b.metric("Ingresos de la selección", libras(vista["monetary"].sum()))
         c.metric("% de los ingresos totales", pct(100 * vista["monetary"].sum() / clientes["monetary"].sum()))
-        st.dataframe(vista.reset_index(), hide_index=True, height=360, column_config={
+        # Styler para la coma decimal (los formatos de column_config usan punto); los valores siguen siendo numéricos.
+        tabla = vista.reset_index().style.format(
+            {"ticket_promedio": "{:,.2f}", "monetary": "{:,.2f}", "tasa_devoluciones": "{:.3f}"},
+            decimal=",", thousands=".")
+        st.dataframe(tabla, hide_index=True, height=360, column_config={
             "CustomerID": st.column_config.NumberColumn("Cliente", format="%d"),
             "nombre_segmento": "Segmento", "cuenta_clave": st.column_config.CheckboxColumn(NOMBRE_CUENTAS_CLAVE),
             "pais": "País", "recency": "Días desde la última compra", "frequency": "Facturas",
-            "ticket_promedio": st.column_config.NumberColumn("Ticket promedio (£)", format="%.2f"),
-            "productos_distintos": "Productos distintos",
-            "monetary": st.column_config.NumberColumn("Gasto total (£)", format="%.2f"),
-            "tasa_devoluciones": st.column_config.NumberColumn("Tasa de devoluciones", format="%.3f")})
+            "ticket_promedio": "Ticket promedio (£)", "productos_distintos": "Productos distintos",
+            "monetary": "Gasto total (£)", "tasa_devoluciones": "Tasa de devoluciones"})
         st.download_button("⬇️ Descargar selección en CSV", vista.reset_index().to_csv(index=False).encode("utf-8"),
                            file_name="clientes_segmentados.csv", mime="text/csv")
 
