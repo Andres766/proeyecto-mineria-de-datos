@@ -69,7 +69,9 @@ def cargar_artefactos(directorio: Path = config.MODELS) -> Artefactos:
     )
 
 
-def validar_entrada(recency, frequency, ticket_promedio, productos_distintos) -> dict[str, float]:
+def validar_entrada(
+    recency: object, frequency: object, ticket_promedio: object, productos_distintos: object
+) -> dict[str, float]:
     """Comprueba que los valores son válidos y los devuelve como números.
 
     Reglas: ``recency``, ``frequency`` y ``productos_distintos`` deben ser enteros ≥ 1;
@@ -112,7 +114,11 @@ def validar_entrada(recency, frequency, ticket_promedio, productos_distintos) ->
 
 
 def clasificar_cliente(
-    artefactos: Artefactos, recency, frequency, ticket_promedio, productos_distintos
+    artefactos: Artefactos,
+    recency: object,
+    frequency: object,
+    ticket_promedio: object,
+    productos_distintos: object,
 ) -> dict:
     """Clasifica un cliente con los modelos guardados.
 

@@ -32,7 +32,12 @@ Definición coherente con la limpieza (ver ``limpieza.py``):
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import pandas as pd
+
+if TYPE_CHECKING:
+    from sklearn.pipeline import Pipeline
 
 
 def devoluciones_computables(ventas: pd.DataFrame, devoluciones: pd.DataFrame) -> pd.DataFrame:
@@ -218,7 +223,7 @@ def calcular_vif(datos: pd.DataFrame) -> pd.Series:
     return pd.Series(resultado, name="vif")
 
 
-def construir_preprocesador(datos: pd.DataFrame, winsorizar: bool = True):
+def construir_preprocesador(datos: pd.DataFrame, winsorizar: bool = True) -> Pipeline:
     """Crea y ajusta el pipeline log1p -> winsorizado p1-p99 -> StandardScaler.
 
     El winsorizado recorta cada variable (ya en escala log) a sus percentiles 1 y 99

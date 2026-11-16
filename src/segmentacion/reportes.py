@@ -37,10 +37,12 @@ def num(valor: float, decimales: int = 0) -> str:
 
 
 def pct(valor: float, decimales: int = 1) -> str:
+    """Porcentaje con formato español (p. ej. «24,1 %»)."""
     return f"{num(valor, decimales)} %"
 
 
 def libras(valor: float, decimales: int = 0) -> str:
+    """Importe en libras con formato español (p. ej. «3.098,15 £»)."""
     return f"{num(valor, decimales)} £"
 
 
@@ -49,6 +51,7 @@ MESES = ["", "enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "ag
 
 
 def fecha_larga(fecha: pd.Timestamp) -> str:
+    """Fecha en texto (p. ej. «10 de diciembre de 2011»)."""
     return f"{fecha.day} de {MESES[fecha.month]} de {fecha.year}"
 
 

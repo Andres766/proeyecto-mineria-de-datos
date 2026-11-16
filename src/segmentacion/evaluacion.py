@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
+
 import numpy as np
 import pandas as pd
 from sklearn.cluster import KMeans
@@ -70,7 +72,7 @@ def metricas_internas(datos: np.ndarray, etiquetas: np.ndarray, ruido: int = -1)
 
 def estabilidad_submuestreo(
     datos: np.ndarray,
-    ajustar,
+    ajustar: Callable[[np.ndarray, int], np.ndarray],
     n_repeticiones: int = 50,
     fraccion: float = 0.8,
     semilla: int = config.RANDOM_STATE,
