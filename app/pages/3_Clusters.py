@@ -98,10 +98,10 @@ resumen = clientes.groupby("grupo").agg(clientes=("CustomerID", "size"), gasto_m
                                         ingresos=("monetary", "sum")).reindex(orden)
 resumen["% clientes"] = 100 * resumen["clientes"] / resumen["clientes"].sum()
 resumen["% ingresos"] = 100 * resumen["ingresos"] / resumen["ingresos"].sum()
-st.dataframe(resumen.drop(columns="ingresos").rename_axis("Grupo"), column_config={
-    "clientes": st.column_config.NumberColumn("Clientes", format="localized"),
-    "gasto_mediano": st.column_config.NumberColumn("Gasto mediano (£)", format="%.2f"),
-    "% clientes": st.column_config.NumberColumn(format="%.1f %%"), "% ingresos": st.column_config.NumberColumn(format="%.1f %%")})
+st.dataframe(resumen.drop(columns="ingresos").rename_axis("Grupo")
+             .rename(columns={"clientes": "Clientes", "gasto_mediano": "Gasto mediano (£)"})
+             .style.format({"Clientes": "{:,.0f}", "Gasto mediano (£)": "{:,.2f}", "% clientes": "{:.1f} %",
+                            "% ingresos": "{:.1f} %"}, decimal=",", thousands="."))
 
 if not algoritmo.startswith("K-Means"):
     st.info("Los colores de GMM y DBSCAN no son los segmentos del modelo final: se muestran para comparar algoritmos. "
@@ -113,7 +113,7 @@ with st.expander("¿Qué representan los ejes de PCA?"):
         "productos_distintos": "Productos distintos"})
     st.markdown(f"PC1 y PC2 explican juntas el **{pct(100 * (varianza[0] + varianza[1]))}** de la varianza. Las cargas indican "
                 "el peso de cada variable en cada componente:")
-    st.dataframe(cargas.style.format("{:.2f}"))
+    st.dataframe(cargas.style.format("{:.2f}", decimal=",", thousands="."))
     st.markdown("- **PC1 (actividad / valor):** más facturas y productos distintos, compras más recientes.\n"
                 "- **PC2 (tamaño del pedido):** ticket alto y compras más espaciadas.")
 st.caption(f"{num(len(clientes))} clientes. Pasa el cursor por un punto para ver sus datos.")
