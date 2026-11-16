@@ -59,6 +59,9 @@ def devoluciones_computables(ventas: pd.DataFrame, devoluciones: pd.DataFrame) -
         .rename(columns={"InvoiceDate": "FechaCompra"})
         .drop(columns="Quantity")
     )
+    # Mismo tipo de texto en ambas tablas para que merge_asof acepte la clave.
+    compras["StockCode"] = compras["StockCode"].astype("string")
+    dev["StockCode"] = dev["StockCode"].astype("string")
 
     libres = dev[~dev["EmparejaCompra"]].rename_axis("idx_dev").reset_index().sort_values("InvoiceDate")
     libres = pd.merge_asof(
