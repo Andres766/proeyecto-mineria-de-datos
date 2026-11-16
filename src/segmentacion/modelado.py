@@ -212,6 +212,27 @@ def ajustar_dbscan(datos: np.ndarray, eps: float, min_samples: int) -> np.ndarra
     return DBSCAN(eps=eps, min_samples=min_samples).fit_predict(datos)
 
 
+def ajustar_vecinos_nucleo(datos: np.ndarray, eps: float, min_samples: int) -> NearestNeighbors:
+    """Ajusta DBSCAN y devuelve un buscador de vecinos sobre sus puntos núcleo.
+
+    Permite decidir si un cliente nuevo sería atípico sin reentrenar: ver :func:`es_atipico_dbscan`.
+    """
+    modelo = DBSCAN(eps=eps, min_samples=min_samples).fit(datos)
+    return NearestNeighbors(n_neighbors=1).fit(modelo.components_)
+
+
+def es_atipico_dbscan(vecinos_nucleo: NearestNeighbors, eps: float, puntos: np.ndarray) -> np.ndarray:
+    """Marca como atípico (ruido de DBSCAN) a cada punto que no tiene un punto núcleo a distancia ≤ eps.
+
+    Es la misma regla con la que DBSCAN etiqueta a los puntos no núcleo: un punto a distancia ≤ eps de
+    un núcleo es frontera (pertenece al cluster); si no, es ruido. Aplicada a los clientes del
+    entrenamiento reproduce exactamente sus etiquetas, y aplicada a un cliente nuevo equivale a
+    asignarlo como frontera o ruido sin modificar el modelo.
+    """
+    distancias, _ = vecinos_nucleo.kneighbors(np.atleast_2d(puntos), n_neighbors=1)
+    return distancias[:, 0] > eps
+
+
 def ajustar_hdbscan(datos: np.ndarray, min_cluster_size: int, min_samples: int) -> np.ndarray:
     """Etiquetas de HDBSCAN (−1 = ruido)."""
     return HDBSCAN(min_cluster_size=min_cluster_size, min_samples=min_samples, copy=True).fit_predict(datos)

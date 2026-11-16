@@ -23,6 +23,8 @@ PARQUET_CLIENTES: Path = DATA_PROCESSED / "clientes_features.parquet"
 
 # Artefactos de modelado (los carga la app; no se reentrena).
 PREPROCESADOR: Path = MODELS / "preprocesador.joblib"
+PREPROCESADOR_SIN_WINSOR: Path = MODELS / "preprocesador_sin_winsor.joblib"
+DBSCAN_NUCLEOS: Path = MODELS / "dbscan_nucleos.joblib"
 JSON_FEATURES: Path = MODELS / "features.json"
 KMEANS: Path = MODELS / "kmeans.joblib"
 GMM: Path = MODELS / "gmm.joblib"

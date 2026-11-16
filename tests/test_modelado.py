@@ -134,3 +134,16 @@ def test_resumen_segmentos():
     assert r.loc["a", "pct_ingresos"] == pytest.approx(100 * 190 / 200)
     assert r.loc["b", "pct_una_compra"] == pytest.approx(100.0)
     assert r.loc["a", "recency_mediana"] == pytest.approx(2.0)
+
+
+def test_regla_de_atipico_reproduce_dbscan():
+    from segmentacion.modelado import ajustar_dbscan, ajustar_vecinos_nucleo, es_atipico_dbscan
+
+    datos, _ = make_blobs(n_samples=400, centers=3, cluster_std=1.2, random_state=1)
+    datos = np.vstack([datos, [[30, 30], [-30, 25]]])          # dos puntos claramente aislados
+    etiquetas = ajustar_dbscan(datos, eps=0.8, min_samples=8)
+    vecinos = ajustar_vecinos_nucleo(datos, eps=0.8, min_samples=8)
+    assert np.array_equal(es_atipico_dbscan(vecinos, 0.8, datos), etiquetas == -1)
+    assert es_atipico_dbscan(vecinos, 0.8, np.array([100.0, 100.0]))[0]       # punto nuevo lejano: atípico
+    nucleo = vecinos._fit_X[0]
+    assert not es_atipico_dbscan(vecinos, 0.8, nucleo + 0.1)[0]               # junto a un núcleo: no atípico
