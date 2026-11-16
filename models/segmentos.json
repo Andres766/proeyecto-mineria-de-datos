@@ -454,7 +454,7 @@
       "id": 3,
       "nombre": "VIP",
       "color": "#2a78d6",
-      "descripcion": "Los mejores clientes: compran a menudo, hace poco, mucha variedad y con pedidos grandes. Son una quinta parte de la base y generan la mayor parte de los ingresos. También son los que más devuelven.",
+      "descripcion": "Los mejores clientes: compran a menudo, hace poco, mucha variedad y con pedidos grandes. Son una minoría de la base y generan la mayor parte de los ingresos. También son los que más devuelven.",
       "estrategias": [
         {
           "accion": "Programa VIP: acceso anticipado a la colección de Navidad y descuento escalonado por volumen anual.",

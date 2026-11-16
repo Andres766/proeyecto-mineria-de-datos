@@ -108,7 +108,7 @@ SEGMENTOS: dict[int, dict] = {
         "nombre": "VIP",
         "descripcion": (
             "Los mejores clientes: compran a menudo, hace poco, mucha variedad y con pedidos grandes. Son una "
-            "quinta parte de la base y generan la mayor parte de los ingresos. También son los que más devuelven."
+            "minoría de la base y generan la mayor parte de los ingresos. También son los que más devuelven."
         ),
         "estrategias": [
             {
