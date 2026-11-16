@@ -116,3 +116,18 @@ def test_descuantizar_rompe_empates_sin_cambiar_el_redondeo():
     assert ruido.nunique() == 5
     assert (ruido.round() == original).all()
     assert (descuantizar(original) == ruido).all()              # reproducible con la semilla
+
+
+def test_resumen_segmentos():
+    from segmentacion.perfilamiento import resumen_segmentos
+
+    clientes = pd.DataFrame({
+        "recency": [1, 3, 100, 200], "frequency": [5, 7, 1, 1], "ticket_promedio": [10.0, 20, 5, 5],
+        "productos_distintos": [4, 6, 1, 1], "monetary": [50.0, 140, 5, 5],
+    })
+    r = resumen_segmentos(clientes, np.array(["a", "a", "b", "b"]))
+    assert r.index.tolist() == ["b", "a"]                       # ordenado por mediana de monetary
+    assert r.loc["a", "clientes"] == 2
+    assert r.loc["a", "pct_ingresos"] == pytest.approx(100 * 190 / 200)
+    assert r.loc["b", "pct_una_compra"] == pytest.approx(100.0)
+    assert r.loc["a", "recency_mediana"] == pytest.approx(2.0)
