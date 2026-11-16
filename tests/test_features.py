@@ -143,3 +143,42 @@ def test_variables_cliente():
     assert c1["pais"] == "France"                       # 2 de sus 3 facturas
     assert np.isnan(x.loc[2, "dias_entre_compras"])     # una sola factura: no definida
     assert x["tasa_devoluciones"].tolist() == [0.0, 0.0]
+
+
+# ---------------------------------------------------------------------------
+# VIF, preprocesador y baseline RFM
+# ---------------------------------------------------------------------------
+from segmentacion.features import (  # noqa: E402
+    calcular_vif,
+    construir_preprocesador,
+)
+
+
+def test_vif_detecta_colinealidad():
+    rng = np.random.default_rng(0)
+    a, b = rng.normal(size=500), rng.normal(size=500)
+    datos = pd.DataFrame({"a": a, "b": b, "c": a + b + rng.normal(scale=0.01, size=500)})
+    vif = calcular_vif(datos)
+    assert vif["c"] > 100                          # c es casi a + b
+    assert calcular_vif(datos[["a", "b"]]).max() < 1.1   # independientes
+
+
+def test_preprocesador_log_winsor_y_escalado():
+    datos = pd.DataFrame({"x": np.r_[np.arange(1, 100), 1_000_000.0], "y": np.arange(1, 101, dtype=float)})
+    pre = construir_preprocesador(datos)
+    z = pre.transform(datos)
+    assert z.mean(axis=0) == pytest.approx([0, 0], abs=1e-9)
+    assert z.std(axis=0) == pytest.approx([1, 1])
+    # El valor extremo queda recortado al percentil 99 (en log), no a log1p(1e6).
+    limite_alto = pre.named_steps["winsor"].kw_args["a_max"][0]
+    assert limite_alto < np.log1p(1_000_000.0)
+    sin_winsor = construir_preprocesador(datos, winsorizar=False)
+    assert "winsor" not in sin_winsor.named_steps
+
+
+def test_preprocesador_solo_usa_objetos_de_sklearn_y_numpy():
+    import pickle
+    pre = construir_preprocesador(pd.DataFrame({"x": np.arange(1.0, 51.0)}))
+    clases = {type(paso).__module__.split(".")[0] for _, paso in pre.steps}
+    assert clases == {"sklearn"}
+    assert "segmentacion" not in pickle.dumps(pre).decode("latin-1")

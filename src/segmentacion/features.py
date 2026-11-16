@@ -181,3 +181,68 @@ def calcular_variables_cliente(
     facturas_pais = ventas.drop_duplicates("InvoiceNo").groupby(["CustomerID", "Country"]).size()
     tabla["pais"] = facturas_pais.sort_values(ascending=False).reset_index().drop_duplicates("CustomerID").set_index("CustomerID")["Country"]
     return tabla
+
+
+# ---------------------------------------------------------------------------
+# Selección y preprocesamiento para el clustering
+# ---------------------------------------------------------------------------
+# Variables que entran al clustering (justificación en notebooks/02_features.ipynb):
+# monetary = frequency x ticket_promedio, así que en escala log monetary es una
+# combinación casi lineal de las otras dos; se usa frequency + ticket_promedio en su lugar.
+VARIABLES_CLUSTERING: list[str] = ["recency", "frequency", "ticket_promedio", "productos_distintos"]
+
+# Variables que solo se usan para perfilar los segmentos.
+VARIABLES_PERFIL: list[str] = [
+    "monetary", "antiguedad", "dias_entre_compras", "unidades_por_factura", "tasa_devoluciones", "pais",
+]
+
+PERCENTILES_WINSOR: tuple[float, float] = (1.0, 99.0)
+
+
+def calcular_vif(datos: pd.DataFrame) -> pd.Series:
+    """Factor de inflación de la varianza de cada columna: 1 / (1 - R²).
+
+    R² es el de la regresión lineal (con intercepto) de la columna sobre las demás.
+    VIF > 5 indica colinealidad alta; > 10, severa.
+    """
+    import numpy as np
+
+    matriz = datos.to_numpy(dtype=float)
+    resultado = {}
+    for i, columna in enumerate(datos.columns):
+        y = matriz[:, i]
+        diseno = np.column_stack([np.ones(len(matriz)), np.delete(matriz, i, axis=1)])
+        coef, *_ = np.linalg.lstsq(diseno, y, rcond=None)
+        r2 = 1 - ((y - diseno @ coef) ** 2).sum() / ((y - y.mean()) ** 2).sum()
+        resultado[columna] = 1 / (1 - r2) if r2 < 1 else float("inf")
+    return pd.Series(resultado, name="vif")
+
+
+def construir_preprocesador(datos: pd.DataFrame, winsorizar: bool = True):
+    """Crea y ajusta el pipeline log1p -> winsorizado p1-p99 -> StandardScaler.
+
+    El winsorizado recorta cada variable (ya en escala log) a sus percentiles 1 y 99
+    calculados sobre ``datos``; los límites quedan fijos dentro del pipeline. Solo usa
+    objetos de scikit-learn y funciones de numpy, de modo que el ``.joblib`` se puede
+    cargar sin importar este paquete.
+
+    Args:
+        datos: variables de clustering en escala original (columnas ``VARIABLES_CLUSTERING``).
+        winsorizar: si es False se omite el recorte (útil para comparar).
+
+    Returns:
+        ``sklearn.pipeline.Pipeline`` ya ajustado sobre ``datos``.
+    """
+    import numpy as np
+    from sklearn.pipeline import Pipeline
+    from sklearn.preprocessing import FunctionTransformer, StandardScaler
+
+    pasos = [("log1p", FunctionTransformer(np.log1p, feature_names_out="one-to-one"))]
+    if winsorizar:
+        en_log = np.log1p(datos.to_numpy(dtype=float))
+        bajo, alto = np.percentile(en_log, PERCENTILES_WINSOR, axis=0)
+        pasos.append(("winsor", FunctionTransformer(
+            np.clip, kw_args={"a_min": bajo, "a_max": alto}, feature_names_out="one-to-one")))
+    pasos.append(("escalado", StandardScaler()))
+    return Pipeline(pasos).fit(datos)
+
