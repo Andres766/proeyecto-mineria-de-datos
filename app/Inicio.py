@@ -30,7 +30,9 @@ st.markdown(
 c1, c2, c3, c4 = st.columns(4)
 c1.metric("Clientes analizados", num(len(clientes)), border=True)
 c2.metric("Ingresos analizados", libras(clientes["monetary"].sum()), border=True)
-c3.metric("Segmentos", f"{final['k']} + subgrupo", help=f"Más el subgrupo «{NOMBRE_CUENTAS_CLAVE}» dentro de VIP.", border=True)
+c3.metric("Segmentos", str(final["k"]), border=True,
+          help=f"Dentro de VIP hay además un subgrupo de {num(cuentas['indicadores']['clientes'])} "
+               f"{NOMBRE_CUENTAS_CLAVE.lower()} (ver «Hallazgos clave»).")
 c4.metric("Silhouette del modelo final", num(final["silhouette"], 3),
           help=f"K-Means con k = {final['k']}. Estabilidad (ARI mediano en submuestras): {num(final['estabilidad_mediana'], 3)}.",
           border=True)
