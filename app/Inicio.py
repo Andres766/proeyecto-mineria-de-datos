@@ -29,12 +29,14 @@ st.markdown(
 # --------------------------------------------------------------------- KPIs
 c1, c2, c3, c4 = st.columns(4)
 c1.metric("Clientes analizados", num(len(clientes)), border=True)
-c2.metric("Ingresos analizados", libras(clientes["monetary"].sum()), border=True)
+ingresos = clientes["monetary"].sum()
+c2.metric("Ingresos analizados", f"{num(ingresos / 1e6, 2)} M£", border=True,
+          help=f"Exactamente {libras(ingresos)}.")
 c3.metric("Segmentos", str(final["k"]), border=True,
           help=f"Dentro de VIP hay además un subgrupo de {num(cuentas['indicadores']['clientes'])} "
                f"{NOMBRE_CUENTAS_CLAVE.lower()} (ver «Hallazgos clave»).")
-c4.metric("Silhouette del modelo final", num(final["silhouette"], 3),
-          help=f"K-Means con k = {final['k']}. Estabilidad (ARI mediano en submuestras): {num(final['estabilidad_mediana'], 3)}.",
+c4.metric("Silhouette", num(final["silhouette"], 3),
+          help=f"Del modelo final: K-Means con k = {final['k']}. Estabilidad (ARI mediano en submuestras): {num(final['estabilidad_mediana'], 3)}.",
           border=True)
 
 # --------------------------------------------------------------------- Hallazgos clave
@@ -96,7 +98,7 @@ with izq:
                 hovertemplate="%{y}: %{x:.1f} % de los ingresos<extra></extra>",
                 text=[pct(segmentos[s]["indicadores"]["pct_ingresos"]) for s in ids], textposition="outside")
     fig.update_layout(barmode="group", bargap=0.25,
-                      title="Peso de cada segmento: ingresos (barra de color) frente a clientes (barra gris)")
+                      title="% de ingresos (color) frente a % de clientes (gris)")
     fig.update_xaxes(title="%", range=[0, 85])
     st.plotly_chart(estilo_figura(fig, 380, leyenda=False), config={"displayModeBar": False})
 with der:
