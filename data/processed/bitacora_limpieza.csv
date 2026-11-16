@@ -1,0 +1,7 @@
+paso,filas_antes,filas_despues,filas_eliminadas,pct_eliminado,justificacion
+1. Duplicados exactos,541909,536641,5268,0.97,Filas idénticas en todas las columnas: doble registro de la misma línea.
+2. Sin CustomerID,536641,401604,135037,25.16,La unidad de análisis es el cliente; sin ID la línea no se puede asignar.
+3. Códigos que no son producto,401604,399693,1911,0.48,"Portes, comisiones, descuentos, ajustes manuales y bonos no reflejan comportamiento de compra de mercancía."
+4. Separar cancelaciones (factura 'C'),399693,391187,8506,2.13,Las cancelaciones no son compras; se guardan aparte para emparejar anulaciones y calcular la tasa de devoluciones.
+5. Cantidad o precio <= 0,391187,391153,34,0.01,Una venta válida requiere cantidad y precio positivos (precio 0 = regalos/ajustes sin valor monetario).
+6. Compras anuladas por cancelación posterior,391153,388431,2722,0.7,"Compra revertida después por el mismo cliente: 2,717 por cancelación exacta (mismo producto, cantidad y precio) y 5 por anulación manual 'M' del mismo importe en <24 h. La transacción no se concretó y, de dejarla, inflaría el gasto."
