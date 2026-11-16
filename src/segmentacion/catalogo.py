@@ -16,17 +16,25 @@ NOMBRE_CUENTAS_CLAVE: str = "Cuentas clave"
 
 SEGMENTOS: dict[int, dict] = {
     0: {
-        "nombre": "Dormidos",
+        "nombre": "Pequeños ocasionales",
         "descripcion": (
-            "Compraron una vez (o muy pocas) hace meses, con pedidos pequeños y pocos productos. "
-            "Son muchos clientes, pero aportan muy poco a los ingresos y casi no devuelven."
+            "Compran poco y de vez en cuando: casi siempre una sola vez, con pedidos pequeños y pocos productos. "
+            "La mayoría no compra desde hace meses; el resto compró hace poco, pero igual de poco. Son muchos "
+            "clientes, aportan muy poco a los ingresos y casi no devuelven."
         ),
         "estrategias": [
             {
-                "accion": "Reactivación de bajo coste: un único email automatizado con cupón de un solo uso y una "
-                          "selección de los productos más vendidos.",
+                "accion": "Reactivación de bajo coste para quienes llevan más de 90 días sin comprar: un único email "
+                          "automatizado con cupón de un solo uso y una selección de los productos más vendidos.",
                 "momento": "Octubre, al empezar la demanda de regalos de Navidad.",
                 "kpi": "Tasa de reactivación (% que compra en los 60 días siguientes) y coste por cliente reactivado.",
+                "indicador": "pct_sin_compra_90d",
+            },
+            {
+                "accion": "Segunda compra para los recientes: email automático con envío gratis a partir de un pedido "
+                          "mínimo algo superior a su primer pedido.",
+                "momento": "30 días después de su primera compra.",
+                "kpi": "% que hace una segunda compra en los 90 días siguientes y ticket de esa segunda compra.",
                 "indicador": "pct_compra_90d",
             },
             {
@@ -131,9 +139,9 @@ SEGMENTOS: dict[int, dict] = {
 CUENTAS_CLAVE: dict = {
     "nombre": NOMBRE_CUENTAS_CLAVE,
     "descripcion": (
-        "Subgrupo de VIP que DBSCAN marca como atípico: volúmenes muy superiores al resto (muchas más "
-        "facturas y tickets mucho mayores). Son pocos clientes que, por sí solos, sostienen una parte muy "
-        "grande de la facturación: perder uno tiene un impacto directo."
+        "Subgrupo de VIP que DBSCAN marca como atípico y que gasta al menos lo que la mediana del resto de VIP: "
+        "volúmenes muy superiores (muchas más facturas y tickets mucho mayores). Son pocos clientes que, por sí "
+        "solos, sostienen una parte muy grande de la facturación: perder uno tiene un impacto directo."
     ),
     "estrategias": [
         {
