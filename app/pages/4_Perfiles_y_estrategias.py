@@ -44,20 +44,17 @@ for col, s in zip(columnas, IDS):
 ic = cuentas["indicadores"]
 with st.container(border=True):
     st.markdown(barra_color(3) + f"<strong>{NOMBRE_CUENTAS_CLAVE}</strong> · subgrupo de {NOMBRES[3]}", unsafe_allow_html=True)
-    izq, der = st.columns([2, 3])
-    with izq:
-        a, b, c = st.columns(3)
-        a.metric("Clientes", num(ic["clientes"]))
-        b.metric("% de clientes", pct(ic["pct_clientes"]))
-        c.metric("% de ingresos", pct(ic["pct_ingresos"]))
-        st.caption(f"Criterio: {cuentas['criterio']} (umbral {libras(cuentas['umbral_gasto'], 2)}).")
-    der.markdown(
+    a, b, c = st.columns(3)
+    a.metric("Clientes", num(ic["clientes"]))
+    b.metric("% de clientes", pct(ic["pct_clientes"]))
+    c.metric("% de ingresos", pct(ic["pct_ingresos"]))
+    st.markdown(
         f"{cuentas['descripcion']}\n\nMediana: **{num(ic['frecuencia_mediana'])} facturas**, ticket de "
         f"**{libras(ic['ticket_mediano'])}** y gasto de **{libras(ic['monetary_mediano'])}**.")
+    st.caption(f"Criterio: {cuentas['criterio']} (umbral {libras(cuentas['umbral_gasto'], 2)}).")
 
 # ------------------------------------------------------------------ Radar y snake plot
 st.subheader("Comparación visual")
-c1, c2 = st.columns(2)
 ejes_radar = {"recency": "Recencia (reciente = alto)", "frequency": "Frecuencia", "ticket_promedio": "Ticket",
               "productos_distintos": "Variedad", "monetary": "Gasto", "antiguedad": "Antigüedad"}
 fig = go.Figure()
@@ -68,7 +65,7 @@ for s in IDS:
                                   fillcolor=COLORES_SEGMENTO[s] + "1a",  # mismo color con ~10 % de opacidad
                                   hovertemplate=f"{NOMBRES[s]}<br>%{{theta}}: percentil %{{r:.0f}}<extra></extra>"))
 fig.update_layout(title="Radar: percentil medio de cada segmento (0–100)", polar=dict(radialaxis=dict(range=[0, 100])))
-c1.plotly_chart(estilo_figura(fig, 470), config={"displayModeBar": False})
+st.plotly_chart(estilo_figura(fig, 470), config={"displayModeBar": False})
 
 vars_snake = ["recency", "frequency", "ticket_promedio", "productos_distintos"]
 fig = go.Figure()
@@ -79,7 +76,7 @@ for s in IDS:
 fig.add_hline(y=0, line_color="#9AA5B1", line_width=1)
 fig.update_layout(title="Snake plot: media estandarizada de las variables del modelo")
 fig.update_yaxes(title="desviaciones típicas respecto a la media")
-c2.plotly_chart(estilo_figura(fig, 470), config={"displayModeBar": False})
+st.plotly_chart(estilo_figura(fig, 470), config={"displayModeBar": False})
 st.caption("En el radar, los ejes son percentiles (misma escala para todas las variables). En el snake plot, 0 es el "
            "cliente medio y ±1 una desviación típica.")
 
