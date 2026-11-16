@@ -141,6 +141,58 @@ def emparejar_compras_anuladas(
     return anuladas, emparejada
 
 
+def emparejar_anulaciones_manuales(
+    ventas: pd.DataFrame,
+    manuales: pd.DataFrame,
+    ventana: pd.Timedelta = pd.Timedelta(days=1),
+) -> pd.Index:
+    """Empareja cancelaciones con código manual ('M') con la compra que anulan.
+
+    Algunas anulaciones no se registran con el producto original sino con una
+    línea manual por el importe total (p. ej. una compra de 60 cestas a un
+    precio erróneo anulada 3 minutos después con 'M' por el mismo importe).
+    Criterio conservador: mismo cliente, mismo importe exacto (a 2 decimales),
+    compra anterior a la cancelación y dentro de ``ventana``; se toma la compra
+    más reciente y el emparejamiento es 1 a 1.
+
+    Args:
+        ventas: líneas de venta con índice único.
+        manuales: cancelaciones con StockCode 'M' (cantidad negativa).
+        ventana: tiempo máximo entre la compra y su anulación.
+
+    Returns:
+        Índices de ``ventas`` que quedan anuladas.
+    """
+    if manuales.empty:
+        return pd.Index([], dtype="int64")
+    izq = (
+        manuales.assign(ImporteAbs=(-manuales["Quantity"] * manuales["UnitPrice"]).round(2))
+        [["CustomerID", "ImporteAbs", "InvoiceDate"]]
+        .rename_axis("idx_manual")
+        .reset_index()
+        .sort_values("InvoiceDate")
+    )
+    der = (
+        ventas.assign(ImporteAbs=(ventas["Quantity"] * ventas["UnitPrice"]).round(2))
+        [["CustomerID", "ImporteAbs", "InvoiceDate"]]
+        .rename(columns={"InvoiceDate": "FechaVenta"})
+        .rename_axis("idx_venta")
+        .reset_index()
+        .sort_values("FechaVenta")
+    )
+    cruce = pd.merge_asof(
+        izq,
+        der,
+        left_on="InvoiceDate",
+        right_on="FechaVenta",
+        by=["CustomerID", "ImporteAbs"],
+        direction="backward",
+        tolerance=ventana,
+    )
+    cruce = cruce.dropna(subset=["idx_venta"]).drop_duplicates(subset="idx_venta", keep="first")
+    return pd.Index(cruce["idx_venta"].astype("int64"))
+
+
 # ---------------------------------------------------------------------------
 # Orquestación
 # ---------------------------------------------------------------------------
@@ -160,7 +212,7 @@ def limpiar(crudo: pd.DataFrame) -> ResultadoLimpieza:
     """Aplica todos los pasos de limpieza y devuelve ventas, devoluciones y bitácora.
 
     Orden: duplicados -> sin cliente -> códigos no producto -> separar
-    cancelaciones -> cantidad/precio <= 0 -> compras anuladas.
+    cancelaciones -> cantidad/precio <= 0 -> compras anuladas (exactas y manuales).
 
     Args:
         crudo: dataset original con tipos normalizados (ver ``carga``).
@@ -183,6 +235,10 @@ def limpiar(crudo: pd.DataFrame) -> ResultadoLimpieza:
     pasos.append(_registro("2. Sin CustomerID", n, len(df),
                            "La unidad de análisis es el cliente; sin ID la línea no se puede asignar."))
 
+    # Se apartan las cancelaciones manuales antes de eliminar el código 'M':
+    # se usan en el paso 6 para detectar compras anuladas por importe.
+    manuales = df[es_cancelacion(df) & (df["StockCode"].str.upper() == "M")]
+
     n = len(df)
     df = eliminar_codigos_no_producto(df)
     pasos.append(_registro("3. Códigos que no son producto", n, len(df),
@@ -204,9 +260,13 @@ def limpiar(crudo: pd.DataFrame) -> ResultadoLimpieza:
     n = len(ventas)
     anuladas, emparejada = emparejar_compras_anuladas(ventas, cancelaciones)
     ventas = ventas.drop(index=anuladas)
-    pasos.append(_registro("6. Compras anuladas por cancelación exacta", n, len(ventas),
-                           "Compra revertida después por el mismo cliente (mismo producto, cantidad "
-                           "y precio): la transacción no se concretó y, de dejarla, inflaría el gasto."))
+    anuladas_manual = emparejar_anulaciones_manuales(ventas, manuales)
+    ventas = ventas.drop(index=anuladas_manual)
+    pasos.append(_registro("6. Compras anuladas por cancelación posterior", n, len(ventas),
+                           f"Compra revertida después por el mismo cliente: {len(anuladas):,} por "
+                           "cancelación exacta (mismo producto, cantidad y precio) y "
+                           f"{len(anuladas_manual):,} por anulación manual 'M' del mismo importe en "
+                           "<24 h. La transacción no se concretó y, de dejarla, inflaría el gasto."))
 
     ventas = ventas.assign(Importe=ventas["Quantity"] * ventas["UnitPrice"])
     devoluciones = cancelaciones.assign(
