@@ -54,16 +54,15 @@ fig = go.Figure(go.Bar(
     marker_color=[NEUTRO] + [AZUL] * len(bitacora), text=[num(v) for v in [inicial] + bitacora["filas_despues"].tolist()],
     textposition="outside", hovertemplate="%{y}<br>%{x:,} filas<extra></extra>"))
 fig.update_yaxes(autorange="reversed")
-fig.update_xaxes(range=[0, inicial * 1.18], title="filas")
+fig.update_xaxes(range=[0, inicial * 1.18], title="filas", tickformat=",.0f")
 fig.update_layout(title="Filas restantes tras cada paso")
 st.plotly_chart(estilo_figura(fig, 380, leyenda=False), config={"displayModeBar": False})
 with st.expander("Ver la bitácora completa con la justificación de cada paso"):
-    st.dataframe(bitacora, hide_index=True, column_config={
-        "paso": "Paso", "filas_antes": st.column_config.NumberColumn("Antes", format="localized"),
-        "filas_despues": st.column_config.NumberColumn("Después", format="localized"),
-        "filas_eliminadas": st.column_config.NumberColumn("Eliminadas", format="localized"),
-        "pct_eliminado": st.column_config.NumberColumn("% eliminado", format="%.2f %%"),
-        "justificacion": st.column_config.TextColumn("Justificación", width="large")})
+    st.dataframe(bitacora.style.format({"filas_antes": "{:,.0f}", "filas_despues": "{:,.0f}", "filas_eliminadas": "{:,.0f}",
+                                        "pct_eliminado": "{:.2f} %"}, decimal=",", thousands="."),
+                 hide_index=True, column_config={
+        "paso": "Paso", "filas_antes": "Antes", "filas_despues": "Después", "filas_eliminadas": "Eliminadas",
+        "pct_eliminado": "% eliminado", "justificacion": st.column_config.TextColumn("Justificación", width="large")})
 
 # ------------------------------------------------------------------ Temporal
 st.subheader("2. Ventas en el tiempo")
@@ -71,11 +70,14 @@ mensual = ag["mensual"].copy()
 NOMBRE_MEDIDA = {"ingresos": "Ingresos (£)", "facturas": "Facturas", "clientes": "Clientes activos"}
 medida = st.radio("Medida", list(NOMBRE_MEDIDA), horizontal=True, format_func=NOMBRE_MEDIDA.get)
 incompleto = mensual.index == mensual.index.max()
+etiquetas_mes = [f"{MESES[f.month][:3]} {f.year}" for f in mensual.index]
 fig = go.Figure(go.Bar(
-    x=mensual.index.strftime("%Y-%m"), y=mensual[medida], marker_color=np.where(incompleto, NEUTRO, AZUL),
+    x=etiquetas_mes, y=mensual[medida], marker_color=np.where(incompleto, NEUTRO, AZUL),
     hovertemplate="%{x}: %{y:,.0f}<extra></extra>"))
-fig.add_annotation(x=mensual.index.strftime("%Y-%m")[-1], y=mensual[medida].iloc[-1], text="mes incompleto<br>(hasta el día 9)",
-                   showarrow=True, arrowhead=0, ay=-45, font=dict(size=11))
+fig.add_annotation(x=etiquetas_mes[-1], y=mensual[medida].iloc[-1], text="incompleto<br>(hasta el 9)",
+                   showarrow=True, arrowhead=0, ax=0, ay=-34, font=dict(size=10, color="#52514e"))
+fig.update_xaxes(type="category")
+fig.update_yaxes(tickformat=",.0f")
 fig.update_layout(title=f"{NOMBRE_MEDIDA[medida]} por mes")
 st.plotly_chart(estilo_figura(fig, 380, leyenda=False), config={"displayModeBar": False})
 pico = mensual["ingresos"].idxmax()
@@ -105,6 +107,7 @@ fig = go.Figure(go.Bar(y=top.index, x=top["ingresos"], orientation="h", marker_c
                        customdata=top["clientes"], hovertemplate="%{y}<br>%{x:,.0f} £ · %{customdata} clientes<extra></extra>"))
 fig.update_yaxes(autorange="reversed")
 fig.update_layout(title="Top 10 países por ingresos" + (" (sin Reino Unido)" if sin_uk else ""))
+fig.update_xaxes(tickformat=",.0f", title="£")
 c1.plotly_chart(estilo_figura(fig, 400, leyenda=False), config={"displayModeBar": False})
 uk = paises.loc["United Kingdom"]
 c1.caption(f"Reino Unido: {pct(100 * uk['clientes'] / paises['clientes'].sum())} de los clientes y "
@@ -117,6 +120,7 @@ fig = go.Figure(go.Bar(y=prods["Description"].str.slice(0, 34), x=prods[criterio
                        hovertemplate="%{y}<br>%{x:,.0f}<extra></extra>"))
 fig.update_yaxes(autorange="reversed")
 fig.update_layout(title=f"Top 10 productos por {criterio}")
+fig.update_xaxes(tickformat=",.0f")
 c2.plotly_chart(estilo_figura(fig, 400, leyenda=False), config={"displayModeBar": False})
 
 # ------------------------------------------------------------------ Distribuciones
@@ -124,12 +128,16 @@ st.subheader("4. Distribución del gasto por cliente")
 st.markdown("El gasto es muy asimétrico: unos pocos clientes concentran gran parte de los ingresos. En escala logarítmica "
             "la distribución se vuelve aproximadamente simétrica, por eso el modelo usa `log1p`.")
 por_segmento = st.toggle("Colorear por segmento", value=True)
-fig = px.histogram(clientes, x="monetary", color="nombre_segmento" if por_segmento else None, nbins=60, log_x=True,
-                   color_discrete_map=COLOR_POR_NOMBRE, category_orders={"nombre_segmento": ORDEN_NOMBRES},
-                   labels={"monetary": "Gasto total por cliente (£, escala log)", "nombre_segmento": "Segmento"},
-                   barmode="stack")
+# Histograma sobre log10 del gasto (eje logarítmico) con las marcas del eje en libras.
+datos_hist = clientes.assign(log_gasto=np.log10(clientes["monetary"]), segmento=clientes["nombre_segmento"].astype(str))
+fig = px.histogram(datos_hist, x="log_gasto", color="segmento" if por_segmento else None, nbins=60,
+                   color_discrete_map=COLOR_POR_NOMBRE, category_orders={"segmento": ORDEN_NOMBRES}, barmode="stack")
 if not por_segmento:
     fig.update_traces(marker_color=AZUL)
+marcas = [10, 100, 1_000, 10_000, 100_000]
+fig.update_xaxes(tickvals=np.log10(marcas), ticktext=[libras(m) for m in marcas],
+                 title="Gasto total por cliente (escala logarítmica)")
+fig.update_traces(hovertemplate="%{y} clientes<extra></extra>")
 fig.update_layout(title="Clientes por gasto total", yaxis_title="clientes", bargap=0.03)
 st.plotly_chart(estilo_figura(fig, 400, leyenda=por_segmento), config={"displayModeBar": False})
 orden = clientes["monetary"].sort_values(ascending=False)
