@@ -5,7 +5,7 @@ segmentación de clientes que combina **clustering (K-Means, GMM, DBSCAN/HDBSCAN
 (PCA, t-SNE)** sobre las transacciones del dataset [Online Retail](https://archive.ics.uci.edu/dataset/352/online+retail),
 con validación, perfilamiento, estrategias de marketing y un dashboard web en Streamlit.
 
-**App publicada:** _pendiente de publicar (ver [DESPLIEGUE.md](DESPLIEGUE.md))_
+**App publicada:** https://segmentacion-retail-ucc.streamlit.app
 
 ## Resultados clave
 
