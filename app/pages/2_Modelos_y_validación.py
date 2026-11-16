@@ -23,6 +23,10 @@ gmm = metricas["gmm"]
 rejilla = pd.DataFrame(gmm["rejilla_bic"])
 AZUL, NARANJA = "#2a78d6", "#eb6834"
 NOMBRE_FINAL = f"K-Means k={final['k']}"
+segmentos = cargar_json("segmentos")["segmentos"]
+tamanos = [g["indicadores"]["pct_clientes"] for g in segmentos]
+N_SEGMENTOS_RFM = len(segmentos[0]["composicion_rfm_pct"])
+N_VARIABLES = len(cargar_json("features")["variables_clustering"])
 
 st.markdown(
     "Se compararon **K-Means**, **GMM** (mezclas gaussianas) y **DBSCAN** (más **HDBSCAN**) sobre las mismas cuatro "
@@ -32,18 +36,20 @@ st.markdown(
 
 # ------------------------------------------------------------------ Tabla comparativa
 st.subheader("Comparación de los modelos")
-tabla = comparativa.rename(columns={
-    "n_clusters": "Clusters", "pct_ruido": "% ruido", "silhouette": "Silhouette ↑", "davies_bouldin": "Davies-Bouldin ↓",
-    "calinski_harabasz": "Calinski-Harabasz ↑", "estabilidad_mediana": "Estabilidad (mediana) ↑",
-    "estabilidad_p10": "Estabilidad (peor 10 %) ↑", "ARI_descuantizado": "Robustez a empates ↑",
-    "pct_segmento_menor": "% segmento menor"})
-st.dataframe(
-    tabla.style.format(precision=3, na_rep="—", decimal=",", thousands=".").apply(
-        lambda fila: ["background-color: #e6f0fb; font-weight: 600" if fila.name == NOMBRE_FINAL else "" for _ in fila], axis=1),
-    column_config={"modelo": "Modelo"})
-st.caption("Métricas internas calculadas en el mismo espacio para todos; en DBSCAN y HDBSCAN el ruido se excluye. "
-           "Estabilidad: ARI entre el modelo completo y 50 submuestras del 80 %. Robustez a empates: ARI al repartir "
-           "aleatoriamente la frecuencia dentro de su intervalo de redondeo. En azul, el modelo final.")
+tabla = comparativa.astype(float).rename(columns={
+    "n_clusters": "Clusters", "pct_ruido": "% ruido", "silhouette": "Silhouette ↑", "davies_bouldin": "DB ↓",
+    "calinski_harabasz": "CH ↑", "estabilidad_mediana": "Estab. mediana ↑", "estabilidad_p10": "Estab. peor 10 % ↑",
+    "ARI_descuantizado": "Robustez empates ↑", "pct_segmento_menor": "% segmento menor"}).rename_axis("Modelo")
+formatos = {columna: "{:.3f}" for columna in tabla.columns}
+formatos.update({"Clusters": "{:.0f}", "% ruido": "{:.1f} %", "CH ↑": "{:,.0f}", "% segmento menor": "{:.1f} %"})
+st.table(
+    tabla.style.format(formatos, na_rep="—", decimal=",", thousands=".")
+    .apply(lambda fila: ["background-color: #e6f0fb; font-weight: 600" if fila.name == NOMBRE_FINAL else "" for _ in fila],
+           axis=1))
+st.caption("DB = Davies-Bouldin; CH = Calinski-Harabasz. Métricas internas calculadas en el mismo espacio para todos; en "
+           "DBSCAN y HDBSCAN el ruido se excluye (con un solo grupo no están definidas: —). Estabilidad: ARI entre el modelo "
+           "completo y 50 submuestras del 80 %. Robustez a empates: ARI al repartir aleatoriamente la frecuencia dentro de "
+           "su intervalo de redondeo. En azul, el modelo final.")
 
 tab_km, tab_gmm, tab_dens, tab_ari = st.tabs(["K-Means", "GMM", "DBSCAN y HDBSCAN", "Concordancia (ARI)"])
 
@@ -60,6 +66,7 @@ with tab_km:
         fig.add_scatter(x=elegido["k"], y=elegido[medida], mode="markers", row=fila, col=col, showlegend=False,
                         marker=dict(size=15, color="rgba(0,0,0,0)", line=dict(color=NARANJA, width=2.5)), hoverinfo="skip")
     fig.update_xaxes(dtick=1)
+    fig.update_yaxes(tickformat=",.0f", row=1, col=1)
     st.plotly_chart(estilo_figura(fig, 560, leyenda=False), config={"displayModeBar": False})
     st.caption(f"Círculo naranja: k = {final['k']}, el elegido.")
 
@@ -92,7 +99,7 @@ with tab_gmm:
         "**Problema detectado:** un tercio de los clientes tiene exactamente 1 factura. Con la regularización por defecto "
         "(`reg_covar` = 1e-6), GMM coloca componentes justo sobre ese valor, con varianza casi cero; la verosimilitud se "
         f"dispara y el BIC baja artificialmente hasta {num(gmm['bic_mejor_reg_defecto'])}. Se buscó el `reg_covar` mínimo "
-        f"sin componentes degenerados: **{gmm['reg_covar']}**."
+        f"sin componentes degenerados: **{num(gmm['reg_covar'], 2)}**."
     )
     colores_tipo = {"full": "#008300", "tied": "#e34948", "diag": "#eda100", "spherical": "#e87ba4"}
     simbolos = {"full": "circle", "tied": "square", "diag": "diamond", "spherical": "triangle-up"}
@@ -100,7 +107,7 @@ with tab_gmm:
     for tipo, sub in rejilla.groupby("tipo"):
         fig.add_scatter(x=sub["k"], y=sub["bic"], mode="lines+markers", name=tipo, line=dict(color=colores_tipo[tipo], width=2),
                         marker=dict(size=8, symbol=simbolos[tipo]), hovertemplate=f"{tipo}, k = %{{x}}<br>BIC: %{{y:,.0f}}<extra></extra>")
-    fig.update_layout(title=f"BIC por número de componentes y tipo de covarianza (reg_covar = {gmm['reg_covar']})")
+    fig.update_layout(title=f"BIC por número de componentes y tipo de covarianza (reg_covar = {num(gmm['reg_covar'], 2)})")
     fig.update_xaxes(title="componentes", dtick=1)
     fig.update_yaxes(title="BIC (↓ mejor)")
     st.plotly_chart(estilo_figura(fig, 420), config={"displayModeBar": False})
@@ -131,25 +138,26 @@ with tab_dens:
 with tab_ari:
     matriz = pd.DataFrame(metricas["matriz_ari"])
     fig = go.Figure(go.Heatmap(z=matriz.values, x=matriz.columns, y=matriz.index, colorscale="Blues", zmin=0, zmax=1,
-                               text=matriz.round(2).values, texttemplate="%{text}", hovertemplate="%{y} vs %{x}: %{z:.3f}<extra></extra>"))
+                               texttemplate="%{z:.2f}", hovertemplate="%{y} vs %{x}: %{z:.3f}<extra></extra>"))
     fig.update_layout(title="ARI entre modelos y con el baseline RFM (1 = particiones idénticas)")
     fig.update_yaxes(autorange="reversed")
     st.plotly_chart(estilo_figura(fig, 560, leyenda=False), config={"displayModeBar": False})
     st.caption(f"ARI del modelo final con el baseline RFM: {num(final['ARI_baseline_rfm'], 3)}. Es bajo en parte porque se "
-               "comparan 4 segmentos con 10, pero el segmento VIP coincide casi por completo con «Campeones» + «Leales» "
-               "(ver Perfiles y estrategias).")
+               f"comparan {final['k']} segmentos con {N_SEGMENTOS_RFM}, pero el segmento VIP coincide casi por completo con "
+               "«Campeones» + «Leales» (ver Perfiles y estrategias).")
 
 # ------------------------------------------------------------------ Decisión
 st.subheader("Modelo elegido y por qué")
 with st.container(border=True):
     st.markdown(
-        f"**K-Means con k = {final['k']}** sobre las 4 variables escaladas.\n\n"
+        f"**K-Means con k = {final['k']}** sobre las {N_VARIABLES} variables escaladas.\n\n"
         f"- **Métricas:** silhouette {num(final['silhouette'], 3)}, Davies-Bouldin {num(final['davies_bouldin'], 3)}, "
         f"Calinski-Harabasz {num(final['calinski_harabasz'])}.\n"
         f"- **Estabilidad:** ARI mediano {num(final['estabilidad_mediana'], 3)} y {num(final['estabilidad_p10'], 3)} en el peor 10 % "
         "de las submuestras.\n"
         f"- **Robustez a los empates de frecuencia:** ARI {num(final['ARI_descuantizado'], 3)}.\n"
-        "- **Negocio:** 4 segmentos de tamaño útil (20–28 % de los clientes cada uno), claramente distintos y accionables.\n\n"
+        f"- **Negocio:** {final['k']} segmentos de tamaño útil (entre el {pct(min(tamanos))} y el {pct(max(tamanos))} de "
+        "los clientes), claramente distintos y accionables.\n\n"
         "No se eligió k = 2 aunque gana en métricas internas: en una nube continua esas métricas siempre favorecen el k "
         "mínimo, y dos segmentos no permiten estrategias diferenciadas. Tampoco k = 5, por su inestabilidad. GMM quedó por "
         "detrás en todas las métricas, y DBSCAN y HDBSCAN no encuentran grupos separados por densidad."
