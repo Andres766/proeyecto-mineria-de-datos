@@ -24,6 +24,11 @@ PARQUET_CLIENTES: Path = DATA_PROCESSED / "clientes_features.parquet"
 # Artefactos de modelado (los carga la app; no se reentrena).
 PREPROCESADOR: Path = MODELS / "preprocesador.joblib"
 JSON_FEATURES: Path = MODELS / "features.json"
+KMEANS: Path = MODELS / "kmeans.joblib"
+GMM: Path = MODELS / "gmm.joblib"
+PCA: Path = MODELS / "pca.joblib"
+JSON_METRICAS: Path = MODELS / "metricas.json"
+PARQUET_SEGMENTADOS: Path = DATA_PROCESSED / "clientes_segmentados.parquet"
 
 # Semilla única para todo proceso aleatorio.
 RANDOM_STATE: int = 42
