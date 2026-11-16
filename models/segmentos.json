@@ -1,0 +1,741 @@
+{
+  "segmentos": [
+    {
+      "id": 0,
+      "nombre": "Pequeños ocasionales",
+      "color": "#eb6834",
+      "descripcion": "Compran poco y de vez en cuando: casi siempre una sola vez, con pedidos pequeños y pocos productos. La mayoría no compra desde hace meses; el resto compró hace poco, pero igual de poco. Son muchos clientes, aportan muy poco a los ingresos y casi no devuelven.",
+      "estrategias": [
+        {
+          "accion": "Reactivación de bajo coste para quienes llevan más de 90 días sin comprar: un único email automatizado con cupón de un solo uso y una selección de los productos más vendidos.",
+          "momento": "Octubre, al empezar la demanda de regalos de Navidad.",
+          "kpi": "Tasa de reactivación (% que compra en los 60 días siguientes) y coste por cliente reactivado.",
+          "indicador": "pct_sin_compra_90d",
+          "linea_base": 66.34615384615384
+        },
+        {
+          "accion": "Segunda compra para los recientes: email automático con envío gratis a partir de un pedido mínimo algo superior a su primer pedido.",
+          "momento": "30 días después de su primera compra.",
+          "kpi": "% que hace una segunda compra en los 90 días siguientes y ticket de esa segunda compra.",
+          "indicador": "pct_compra_90d",
+          "linea_base": 33.65384615384615
+        },
+        {
+          "accion": "Higiene de la base: tras dos campañas sin respuesta, pasar a comunicación trimestral y excluirlos de acciones con coste (descuentos, envíos de catálogo).",
+          "momento": "Al cerrar la campaña de octubre–noviembre.",
+          "kpi": "Coste de marketing por libra de ingresos del segmento.",
+          "indicador": "pct_ingresos",
+          "linea_base": 2.7180650364616965
+        }
+      ],
+      "indicadores": {
+        "clientes": 1040.0,
+        "pct_clientes": 24.051803885291395,
+        "ingresos": 225932.41,
+        "pct_ingresos": 2.7180650364616965,
+        "monetary_mediano": 176.91500000000002,
+        "ticket_mediano": 139.33749999999998,
+        "frecuencia_mediana": 1.0,
+        "pct_compra_30d": 9.326923076923077,
+        "pct_compra_90d": 33.65384615384615,
+        "pct_sin_compra_90d": 66.34615384615384,
+        "pct_una_compra": 67.5,
+        "pct_intervalo_60d": 49.40828402366864,
+        "pct_devuelve": 6.730769230769231,
+        "tasa_devoluciones_media": 0.005475321781954571,
+        "pct_clientes_compran_temporada": 34.71153846153846,
+        "pct_facturas_temporada": 26.017811704834603,
+        "pct_una_compra_en_temporada": 32.05128205128205,
+        "pct_captados_temporada": 19.134615384615383,
+        "ingresos_temporada": 58408.2
+      },
+      "medianas": {
+        "recency": 165.0,
+        "frequency": 1.0,
+        "monetary": 176.91500000000002,
+        "ticket_promedio": 139.33749999999998,
+        "productos_distintos": 9.0,
+        "antiguedad": 219.5,
+        "dias_entre_compras": 62.56620370370371,
+        "unidades_por_factura": 73.0,
+        "tasa_devoluciones": 0.0
+      },
+      "medias": {
+        "recency": 169.15096153846153,
+        "frequency": 1.5115384615384615,
+        "monetary": 217.24270192307694,
+        "ticket_promedio": 150.3635564102564,
+        "productos_distintos": 11.848076923076922,
+        "antiguedad": 206.96442307692308,
+        "dias_entre_compras": 84.61602858101656,
+        "unidades_por_factura": 93.9199358974359,
+        "tasa_devoluciones": 0.0054753217819545705
+      },
+      "snake_z": {
+        "recency": 0.7439900637826617,
+        "frequency": -0.6977528666799404,
+        "ticket_promedio": -1.0395904666165314,
+        "productos_distintos": -1.1348923871270868
+      },
+      "radar_percentil": {
+        "recency": 28.001360919376648,
+        "frequency": 28.605291130007828,
+        "ticket_promedio": 19.528359158186863,
+        "productos_distintos": 17.711554027609765,
+        "monetary": 16.003400074717142,
+        "antiguedad": 45.40528490357931
+      },
+      "pais": {
+        "pais_principal": "United Kingdom",
+        "pct_pais_principal": 93.5576923076923,
+        "segundo_pais": "France",
+        "pct_segundo_pais": 1.6346153846153848,
+        "paises_distintos": 22
+      },
+      "productos_top_importe": [
+        {
+          "descripcion": "WHITE HANGING HEART T-LIGHT HOLDER",
+          "valor": 4282.95
+        },
+        {
+          "descripcion": "REGENCY CAKESTAND 3 TIER",
+          "valor": 3511.95
+        },
+        {
+          "descripcion": "JUMBO BAG RED RETROSPOT",
+          "valor": 2742.34
+        },
+        {
+          "descripcion": "CHILLI LIGHTS",
+          "valor": 2480.8
+        },
+        {
+          "descripcion": "DOORMAT UNION FLAG",
+          "valor": 2041.95
+        }
+      ],
+      "productos_top_penetracion": [
+        {
+          "descripcion": "WHITE HANGING HEART T-LIGHT HOLDER",
+          "valor": 10.0
+        },
+        {
+          "descripcion": "REGENCY CAKESTAND 3 TIER",
+          "valor": 7.115384615384615
+        },
+        {
+          "descripcion": "PARTY BUNTING",
+          "valor": 6.0576923076923075
+        },
+        {
+          "descripcion": "REX CASH+CARRY JUMBO SHOPPER",
+          "valor": 5.961538461538462
+        },
+        {
+          "descripcion": "ANTIQUE SILVER T-LIGHT GLASS",
+          "valor": 5.096153846153846
+        }
+      ],
+      "composicion_rfm_pct": {
+        "Campeones": 0.38,
+        "Leales": 1.63,
+        "Potenciales leales": 5.87,
+        "Nuevos": 0.48,
+        "Prometedores": 3.65,
+        "Necesitan atención": 3.27,
+        "A punto de dormir": 11.92,
+        "En riesgo": 19.13,
+        "No se pueden perder": 0.38,
+        "Hibernando": 53.27
+      },
+      "atipicos": 25
+    },
+    {
+      "id": 1,
+      "nombre": "Grandes ocasionales",
+      "color": "#4a3aa7",
+      "descripcion": "Hacen pedidos grandes (ticket alto y muchas unidades), pero casi siempre una sola vez, y no han vuelto en meses. Muchos de sus pedidos únicos son de septiembre–noviembre: un patrón de aprovisionamiento para Navidad.",
+      "estrategias": [
+        {
+          "accion": "Campaña de pre-temporada para quienes compraron en septiembre–noviembre: catálogo de Navidad anticipado con condiciones de mayorista.",
+          "momento": "Finales de agosto e inicio de septiembre, antes de su ventana habitual de compra.",
+          "kpi": "% de estos clientes que vuelve a comprar entre septiembre y noviembre.",
+          "indicador": "pct_una_compra_en_temporada",
+          "linea_base": 43.86503067484663
+        },
+        {
+          "accion": "Llamada comercial a los clientes de pedidos grandes puntuales (marcados como atípicos) para proponer un acuerdo de reposición.",
+          "momento": "Primer trimestre, fuera de la temporada alta.",
+          "kpi": "% que hace una segunda compra en los 90 días siguientes al contacto.",
+          "indicador": "pct_una_compra",
+          "linea_base": 53.181076672104396
+        },
+        {
+          "accion": "Encuesta breve sobre por qué no repitieron, con un incentivo por responder.",
+          "momento": "60 días después de su compra si no han repetido.",
+          "kpi": "Tasa de respuesta y % de encuestados que hace una segunda compra.",
+          "indicador": "pct_una_compra",
+          "linea_base": 53.181076672104396
+        }
+      ],
+      "indicadores": {
+        "clientes": 1226.0,
+        "pct_clientes": 28.353376503237744,
+        "ingresos": 1312164.512,
+        "pct_ingresos": 15.785909078529393,
+        "monetary_mediano": 655.665,
+        "ticket_mediano": 417.91999999999996,
+        "frecuencia_mediana": 1.0,
+        "pct_compra_30d": 4.8123980424143555,
+        "pct_compra_90d": 43.556280587275694,
+        "pct_sin_compra_90d": 56.443719412724306,
+        "pct_una_compra": 53.181076672104396,
+        "pct_intervalo_60d": 38.850174216027874,
+        "pct_devuelve": 21.451876019575856,
+        "tasa_devoluciones_media": 0.005494571223608259,
+        "pct_clientes_compran_temporada": 47.14518760195758,
+        "pct_facturas_temporada": 29.422301836094938,
+        "pct_una_compra_en_temporada": 43.86503067484663,
+        "pct_captados_temporada": 16.150081566068515,
+        "ingresos_temporada": 420617.14099999995
+      },
+      "medianas": {
+        "recency": 110.0,
+        "frequency": 1.0,
+        "monetary": 655.665,
+        "ticket_promedio": 417.91999999999996,
+        "productos_distintos": 32.0,
+        "antiguedad": 222.0,
+        "dias_entre_compras": 73.77743055555555,
+        "unidades_por_factura": 250.16666666666669,
+        "tasa_devoluciones": 0.0
+      },
+      "medias": {
+        "recency": 141.94127243066885,
+        "frequency": 1.8213703099510603,
+        "monetary": 1070.281004893964,
+        "ticket_promedio": 587.9135378311194,
+        "productos_distintos": 43.366231647634585,
+        "antiguedad": 206.43719412724306,
+        "dias_entre_compras": 90.94330076864756,
+        "unidades_por_factura": 356.62219697558197,
+        "tasa_devoluciones": 0.005494571223608259
+      },
+      "snake_z": {
+        "recency": 0.6518702520208374,
+        "frequency": -0.5481246532668498,
+        "ticket_promedio": 0.7600903524155718,
+        "productos_distintos": -0.035963741921454975
+      },
+      "radar_percentil": {
+        "recency": 30.768064130095237,
+        "frequency": 34.4997872189517,
+        "ticket_promedio": 73.12763052457319,
+        "productos_distintos": 47.89438250487057,
+        "monetary": 52.134601367533236,
+        "antiguedad": 45.095906152994104
+      },
+      "pais": {
+        "pais_principal": "United Kingdom",
+        "pct_pais_principal": 86.05220228384992,
+        "segundo_pais": "Germany",
+        "pct_segundo_pais": 2.528548123980424,
+        "paises_distintos": 35
+      },
+      "productos_top_importe": [
+        {
+          "descripcion": "REGENCY CAKESTAND 3 TIER",
+          "valor": 19368.149999999998
+        },
+        {
+          "descripcion": "WHITE HANGING HEART T-LIGHT HOLDER",
+          "valor": 14054.05
+        },
+        {
+          "descripcion": "PARTY BUNTING",
+          "valor": 13108.650000000001
+        },
+        {
+          "descripcion": "JUMBO BAG RED RETROSPOT",
+          "valor": 11650.92
+        },
+        {
+          "descripcion": "CHILLI LIGHTS",
+          "valor": 9734.25
+        }
+      ],
+      "productos_top_penetracion": [
+        {
+          "descripcion": "REGENCY CAKESTAND 3 TIER",
+          "valor": 20.717781402936378
+        },
+        {
+          "descripcion": "WHITE HANGING HEART T-LIGHT HOLDER",
+          "valor": 17.536704730831975
+        },
+        {
+          "descripcion": "SET OF 3 CAKE TINS PANTRY DESIGN",
+          "valor": 15.415986949429037
+        },
+        {
+          "descripcion": "PARTY BUNTING",
+          "valor": 15.33442088091354
+        },
+        {
+          "descripcion": "ASSORTED COLOUR BIRD ORNAMENT",
+          "valor": 14.926590538336052
+        }
+      ],
+      "composicion_rfm_pct": {
+        "Campeones": 0.08,
+        "Leales": 3.51,
+        "Potenciales leales": 4.24,
+        "Nuevos": 0.08,
+        "Prometedores": 1.71,
+        "Necesitan atención": 5.95,
+        "A punto de dormir": 14.68,
+        "En riesgo": 26.02,
+        "No se pueden perder": 1.06,
+        "Hibernando": 42.66
+      },
+      "atipicos": 45
+    },
+    {
+      "id": 2,
+      "nombre": "En crecimiento",
+      "color": "#1baf7a",
+      "descripcion": "Clientes recientes que ya repiten (varias facturas) con pedidos de tamaño medio. Una parte entró en la campaña de Navidad. Su valor futuro depende de que sigan comprando.",
+      "estrategias": [
+        {
+          "accion": "Secuencia de recompra: email con productos complementarios a lo que ya compraron.",
+          "momento": "21 días después de cada pedido (automático).",
+          "kpi": "Tasa de recompra a 60 días.",
+          "indicador": "pct_intervalo_60d",
+          "linea_base": 42.311459353574925
+        },
+        {
+          "accion": "Retener a los captados en Navidad: oferta para la primera compra del año.",
+          "momento": "Enero–febrero, los meses de menor actividad.",
+          "kpi": "% de los captados en octubre–diciembre que vuelve a comprar en enero–febrero.",
+          "indicador": "pct_captados_temporada",
+          "linea_base": 25.47008547008547
+        },
+        {
+          "accion": "Subir el ticket: envío gratis a partir de un pedido mínimo por encima de su ticket actual y packs de productos.",
+          "momento": "Desde su siguiente pedido.",
+          "kpi": "Ticket promedio del segmento.",
+          "indicador": "ticket_mediano",
+          "linea_base": 228.74125
+        }
+      ],
+      "indicadores": {
+        "clientes": 1170.0,
+        "pct_clientes": 27.05827937095282,
+        "ingresos": 938444.201,
+        "pct_ingresos": 11.289891394547302,
+        "monetary_mediano": 700.22,
+        "ticket_mediano": 228.74125,
+        "frecuencia_mediana": 3.0,
+        "pct_compra_30d": 64.52991452991454,
+        "pct_compra_90d": 95.64102564102565,
+        "pct_sin_compra_90d": 4.358974358974359,
+        "pct_una_compra": 12.735042735042734,
+        "pct_intervalo_60d": 42.311459353574925,
+        "pct_devuelve": 24.358974358974358,
+        "tasa_devoluciones_media": 0.006148177262295469,
+        "pct_clientes_compran_temporada": 88.71794871794872,
+        "pct_facturas_temporada": 45.8603685439917,
+        "pct_una_compra_en_temporada": 79.86577181208054,
+        "pct_captados_temporada": 25.47008547008547,
+        "ingresos_temporada": 455947.2
+      },
+      "medianas": {
+        "recency": 23.0,
+        "frequency": 3.0,
+        "monetary": 700.22,
+        "ticket_promedio": 228.74125,
+        "productos_distintos": 44.0,
+        "antiguedad": 212.0,
+        "dias_entre_compras": 69.02951388888889,
+        "unidades_por_factura": 136.29166666666669,
+        "tasa_devoluciones": 0.0
+      },
+      "medias": {
+        "recency": 30.68034188034188,
+        "frequency": 3.293162393162393,
+        "monetary": 802.0890606837606,
+        "ticket_promedio": 251.73637087387922,
+        "productos_distintos": 51.08376068376069,
+        "antiguedad": 195.94188034188033,
+        "dias_entre_compras": 89.0450507804274,
+        "unidades_por_factura": 162.30644010310678,
+        "tasa_devoluciones": 0.006148177262295469
+      },
+      "snake_z": {
+        "recency": -0.5875117154378405,
+        "frequency": 0.06656548130164416,
+        "ticket_promedio": -0.26035694953600685,
+        "productos_distintos": 0.18331715768737264
+      },
+      "radar_percentil": {
+        "recency": 68.41953477707409,
+        "frequency": 56.90525747764416,
+        "ticket_promedio": 40.97182689342726,
+        "productos_distintos": 55.22454675553658,
+        "monetary": 49.77077848146303,
+        "antiguedad": 43.347387271994116
+      },
+      "pais": {
+        "pais_principal": "United Kingdom",
+        "pct_pais_principal": 92.73504273504274,
+        "segundo_pais": "France",
+        "pct_segundo_pais": 2.051282051282051,
+        "paises_distintos": 21
+      },
+      "productos_top_importe": [
+        {
+          "descripcion": "REGENCY CAKESTAND 3 TIER",
+          "valor": 9360.85
+        },
+        {
+          "descripcion": "WHITE HANGING HEART T-LIGHT HOLDER",
+          "valor": 9269.25
+        },
+        {
+          "descripcion": "ASSORTED COLOUR BIRD ORNAMENT",
+          "valor": 8099.139999999999
+        },
+        {
+          "descripcion": "PARTY BUNTING",
+          "valor": 7917.6
+        },
+        {
+          "descripcion": "PAPER CHAIN KIT 50'S CHRISTMAS",
+          "valor": 6506.85
+        }
+      ],
+      "productos_top_penetracion": [
+        {
+          "descripcion": "WHITE HANGING HEART T-LIGHT HOLDER",
+          "valor": 18.46153846153846
+        },
+        {
+          "descripcion": "REX CASH+CARRY JUMBO SHOPPER",
+          "valor": 17.35042735042735
+        },
+        {
+          "descripcion": "REGENCY CAKESTAND 3 TIER",
+          "valor": 16.666666666666668
+        },
+        {
+          "descripcion": "PAPER CHAIN KIT 50'S CHRISTMAS",
+          "valor": 15.726495726495726
+        },
+        {
+          "descripcion": "ASSORTED COLOUR BIRD ORNAMENT",
+          "valor": 14.871794871794872
+        }
+      ],
+      "composicion_rfm_pct": {
+        "Campeones": 12.56,
+        "Leales": 33.59,
+        "Potenciales leales": 30.09,
+        "Nuevos": 2.99,
+        "Prometedores": 2.91,
+        "Necesitan atención": 6.75,
+        "A punto de dormir": 3.5,
+        "En riesgo": 5.81,
+        "No se pueden perder": 1.71,
+        "Hibernando": 0.09
+      },
+      "atipicos": 21
+    },
+    {
+      "id": 3,
+      "nombre": "VIP",
+      "color": "#2a78d6",
+      "descripcion": "Los mejores clientes: compran a menudo, hace poco, mucha variedad y con pedidos grandes. Son una quinta parte de la base y generan la mayor parte de los ingresos. También son los que más devuelven.",
+      "estrategias": [
+        {
+          "accion": "Programa VIP: acceso anticipado a la colección de Navidad y descuento escalonado por volumen anual.",
+          "momento": "Agosto, antes del pico de pedidos de septiembre–noviembre.",
+          "kpi": "% de VIP que compra en septiembre–noviembre.",
+          "indicador": "pct_clientes_compran_temporada",
+          "linea_base": 96.84684684684684
+        },
+        {
+          "accion": "Alerta de abandono: si un VIP supera 1,5 veces su intervalo habitual entre compras sin pedir, contacto personal del equipo comercial.",
+          "momento": "Revisión semanal automática durante todo el año.",
+          "kpi": "% de VIP sin compras en los últimos 90 días.",
+          "indicador": "pct_sin_compra_90d",
+          "linea_base": 1.6891891891891893
+        },
+        {
+          "accion": "Revisión de las causas de devolución con los VIP que más devuelven (producto, embalaje, transporte) y gestión prioritaria de sus incidencias.",
+          "momento": "Trimestral.",
+          "kpi": "% de VIP con devoluciones y tasa media de devolución.",
+          "indicador": "pct_devuelve",
+          "linea_base": 59.23423423423423
+        }
+      ],
+      "indicadores": {
+        "clientes": 888.0,
+        "pct_clientes": 20.53654024051804,
+        "ingresos": 5835710.68,
+        "pct_ingresos": 70.20613449046161,
+        "monetary_mediano": 3098.1549999999997,
+        "ticket_mediano": 381.8527272727273,
+        "frecuencia_mediana": 8.0,
+        "pct_compra_30d": 80.18018018018019,
+        "pct_compra_90d": 98.3108108108108,
+        "pct_sin_compra_90d": 1.6891891891891893,
+        "pct_una_compra": 0.0,
+        "pct_intervalo_60d": 83.1081081081081,
+        "pct_devuelve": 59.23423423423423,
+        "tasa_devoluciones_media": 0.007455839402162962,
+        "pct_clientes_compran_temporada": 96.84684684684684,
+        "pct_facturas_temporada": 32.12503530740985,
+        "pct_una_compra_en_temporada": NaN,
+        "pct_captados_temporada": 2.59009009009009,
+        "ingresos_temporada": 2085979.7599999998
+      },
+      "medianas": {
+        "recency": 11.0,
+        "frequency": 8.0,
+        "monetary": 3098.1549999999997,
+        "ticket_promedio": 381.8527272727273,
+        "productos_distintos": 123.0,
+        "antiguedad": 335.0,
+        "dias_entre_compras": 35.49642361111111,
+        "unidades_por_factura": 232.15,
+        "tasa_devoluciones": 0.001895324926931432
+      },
+      "medias": {
+        "recency": 20.063063063063062,
+        "frequency": 11.960585585585585,
+        "monetary": 6571.746261261261,
+        "ticket_promedio": 491.83395797254434,
+        "productos_distintos": 157.17454954954954,
+        "antiguedad": 305.1182432432432,
+        "dias_entre_compras": 39.957477700001306,
+        "unidades_por_factura": 290.8869350247645,
+        "tasa_devoluciones": 0.007455839402162962
+      },
+      "snake_z": {
+        "recency": -0.9972453696500471,
+        "frequency": 1.4862412084790246,
+        "ticket_promedio": 0.5111722344333639,
+        "productos_distintos": 1.13727314832618
+      },
+      "radar_percentil": {
+        "recency": 77.99108370627798,
+        "frequency": 87.4150977990016,
+        "ticket_promedio": 65.70832656199215,
+        "productos_distintos": 83.89499004091974,
+        "monetary": 87.22706286304806,
+        "antiguedad": 70.9735131176505
+      },
+      "pais": {
+        "pais_principal": "United Kingdom",
+        "pct_pais_principal": 89.63963963963964,
+        "segundo_pais": "Germany",
+        "pct_segundo_pais": 3.153153153153153,
+        "paises_distintos": 20
+      },
+      "productos_top_importe": [
+        {
+          "descripcion": "REGENCY CAKESTAND 3 TIER",
+          "valor": 106134.9
+        },
+        {
+          "descripcion": "WHITE HANGING HEART T-LIGHT HOLDER",
+          "valor": 66467.4
+        },
+        {
+          "descripcion": "JUMBO BAG RED RETROSPOT",
+          "valor": 63234.51
+        },
+        {
+          "descripcion": "PARTY BUNTING",
+          "valor": 44901.530000000006
+        },
+        {
+          "descripcion": "ASSORTED COLOUR BIRD ORNAMENT",
+          "valor": 39797.79
+        }
+      ],
+      "productos_top_penetracion": [
+        {
+          "descripcion": "REGENCY CAKESTAND 3 TIER",
+          "valor": 39.414414414414416
+        },
+        {
+          "descripcion": "WHITE HANGING HEART T-LIGHT HOLDER",
+          "valor": 35.92342342342342
+        },
+        {
+          "descripcion": "JUMBO BAG RED RETROSPOT",
+          "valor": 35.585585585585584
+        },
+        {
+          "descripcion": "PACK OF 72 RETROSPOT CAKE CASES",
+          "valor": 35.13513513513514
+        },
+        {
+          "descripcion": "LUNCH BAG RED RETROSPOT",
+          "valor": 34.009009009009006
+        }
+      ],
+      "composicion_rfm_pct": {
+        "Campeones": 53.83,
+        "Leales": 40.88,
+        "Potenciales leales": 1.91,
+        "Nuevos": 0.0,
+        "Prometedores": 0.0,
+        "Necesitan atención": 0.11,
+        "A punto de dormir": 0.0,
+        "En riesgo": 0.45,
+        "No se pueden perder": 2.82,
+        "Hibernando": 0.0
+      },
+      "atipicos": 72
+    }
+  ],
+  "cuentas_clave": {
+    "nombre": "Cuentas clave",
+    "segmento_padre": 3,
+    "descripcion": "Subgrupo de VIP que DBSCAN marca como atípico y que gasta al menos lo que la mediana del resto de VIP: volúmenes muy superiores (muchas más facturas y tickets mucho mayores). Son pocos clientes que, por sí solos, sostienen una parte muy grande de la facturación: perder uno tiene un impacto directo.",
+    "criterio": "segmento VIP (3), marcado como ruido por DBSCAN y gasto >= mediana de los VIP no atípicos",
+    "umbral_gasto": 2936.195,
+    "estrategias": [
+      {
+        "accion": "Gestor de cuenta dedicado con condiciones negociadas: precios por volumen, plazos de pago y reposición programada.",
+        "momento": "Revisión trimestral; negociación anual en julio–agosto, antes de la temporada.",
+        "kpi": "% de cuentas clave con compra en los últimos 90 días y % de los ingresos totales que aportan.",
+        "indicador": "pct_compra_90d",
+        "linea_base": 96.96969696969697
+      },
+      {
+        "accion": "Planificación conjunta del pedido de Navidad con previsión de stock por cliente.",
+        "momento": "Julio–agosto.",
+        "kpi": "Ingresos del subgrupo en septiembre–noviembre frente al año anterior.",
+        "indicador": "ingresos_temporada",
+        "linea_base": 973121.81
+      }
+    ],
+    "indicadores": {
+      "clientes": 66.0,
+      "pct_clientes": 1.5263644773358003,
+      "ingresos": 2687209.27,
+      "pct_ingresos": 32.328294831373505,
+      "monetary_mediano": 23278.215,
+      "ticket_mediano": 1078.1922846045197,
+      "frecuencia_mediana": 26.0,
+      "pct_compra_30d": 92.42424242424242,
+      "pct_compra_90d": 96.96969696969697,
+      "pct_sin_compra_90d": 3.0303030303030303,
+      "pct_una_compra": 0.0,
+      "pct_intervalo_60d": 95.45454545454545,
+      "pct_devuelve": 74.24242424242425,
+      "tasa_devoluciones_media": 0.009963459505655144,
+      "pct_clientes_compran_temporada": 96.96969696969697,
+      "pct_facturas_temporada": 30.917280917280916,
+      "pct_una_compra_en_temporada": NaN,
+      "pct_captados_temporada": 1.5151515151515151,
+      "ingresos_temporada": 973121.81
+    },
+    "medianas": {
+      "recency": 8.0,
+      "frequency": 26.0,
+      "monetary": 23278.215,
+      "ticket_promedio": 1078.1922846045197,
+      "productos_distintos": 85.0,
+      "antiguedad": 367.0,
+      "dias_entre_compras": 13.052149011610819,
+      "unidades_por_factura": 640.1439393939395,
+      "tasa_devoluciones": 0.00264258002729918
+    }
+  },
+  "meses_temporada": [
+    9,
+    10,
+    11
+  ],
+  "estacionalidad_pct_facturas": {
+    "0": {
+      "2010-12": 10.05,
+      "2011-01": 7.06,
+      "2011-02": 7.32,
+      "2011-03": 10.18,
+      "2011-04": 7.38,
+      "2011-05": 9.61,
+      "2011-06": 7.89,
+      "2011-07": 7.51,
+      "2011-08": 6.23,
+      "2011-09": 7.89,
+      "2011-10": 9.73,
+      "2011-11": 8.4,
+      "2011-12": 0.76
+    },
+    "1": {
+      "2010-12": 7.43,
+      "2011-01": 6.22,
+      "2011-02": 6.99,
+      "2011-03": 9.14,
+      "2011-04": 7.48,
+      "2011-05": 9.45,
+      "2011-06": 7.52,
+      "2011-07": 8.6,
+      "2011-08": 7.52,
+      "2011-09": 12.67,
+      "2011-10": 11.51,
+      "2011-11": 5.24,
+      "2011-12": 0.22
+    },
+    "2": {
+      "2010-12": 5.71,
+      "2011-01": 3.74,
+      "2011-02": 3.97,
+      "2011-03": 4.85,
+      "2011-04": 4.88,
+      "2011-05": 6.38,
+      "2011-06": 6.28,
+      "2011-07": 6.0,
+      "2011-08": 6.18,
+      "2011-09": 9.21,
+      "2011-10": 12.56,
+      "2011-11": 24.09,
+      "2011-12": 6.15
+    },
+    "3": {
+      "2010-12": 7.93,
+      "2011-01": 5.47,
+      "2011-02": 5.31,
+      "2011-03": 7.08,
+      "2011-04": 6.2,
+      "2011-05": 8.66,
+      "2011-06": 7.92,
+      "2011-07": 7.28,
+      "2011-08": 7.16,
+      "2011-09": 9.1,
+      "2011-10": 9.33,
+      "2011-11": 13.69,
+      "2011-12": 4.87
+    },
+    "Total": {
+      "2010-12": 7.58,
+      "2011-01": 5.33,
+      "2011-02": 5.41,
+      "2011-03": 7.13,
+      "2011-04": 6.18,
+      "2011-05": 8.36,
+      "2011-06": 7.52,
+      "2011-07": 7.19,
+      "2011-08": 6.92,
+      "2011-09": 9.46,
+      "2011-10": 10.31,
+      "2011-11": 14.39,
+      "2011-12": 4.22
+    }
+  }
+}
