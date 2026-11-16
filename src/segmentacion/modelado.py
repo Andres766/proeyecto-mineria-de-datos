@@ -66,21 +66,27 @@ def barrido_kmeans(datos: np.ndarray, valores_k: list[int]) -> pd.DataFrame:
     return pd.DataFrame(filas)
 
 
-def ordenar_clusters_kmeans(modelo: KMeans, datos: np.ndarray, criterio: np.ndarray) -> KMeans:
-    """Reetiqueta los clusters de un K-Means ordenándolos por un criterio (de menor a mayor).
+def ordenar_clusters_kmeans(modelo: KMeans, criterio: np.ndarray) -> KMeans:
+    """Renumera los clusters de un K-Means de menor a mayor ``criterio`` sin reajustarlo.
 
-    Reajusta un K-Means inicializado con los centroides ya ordenados y ``n_init=1``: la
-    partición es la misma, pero la etiqueta 0 corresponde al cluster con menor ``criterio``.
-    Así el modelo guardado sigue siendo un ``KMeans`` estándar de scikit-learn.
+    Devuelve una copia del modelo con los centroides permutados y las etiquetas
+    renumeradas: la partición es exactamente la misma (ningún cliente cambia de grupo) y
+    la etiqueta 0 corresponde al cluster con menor ``criterio``. Sigue siendo un ``KMeans``
+    estándar de scikit-learn, así que ``predict`` funciona igual al cargarlo con joblib.
 
     Args:
         modelo: K-Means ajustado.
-        datos: datos con los que se ajustó.
         criterio: un valor por cluster (índice = etiqueta original), p. ej. la mediana de monetary.
     """
-    orden = np.argsort(criterio)
-    centros = modelo.cluster_centers_[orden]
-    return KMeans(n_clusters=len(orden), init=centros, n_init=1, random_state=config.RANDOM_STATE).fit(datos)
+    import copy
+
+    orden = np.argsort(criterio)                 # orden[nueva] = original
+    nueva_de_original = np.empty_like(orden)
+    nueva_de_original[orden] = np.arange(len(orden))
+    ordenado = copy.deepcopy(modelo)
+    ordenado.cluster_centers_ = modelo.cluster_centers_[orden]
+    ordenado.labels_ = nueva_de_original[modelo.labels_]
+    return ordenado
 
 
 # ---------------------------------------------------------------------------

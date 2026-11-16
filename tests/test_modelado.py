@@ -39,9 +39,12 @@ def test_ordenar_clusters_mantiene_particion(blobs):
     datos, _ = blobs
     modelo = ajustar_kmeans(datos, 3)
     criterio = modelo.cluster_centers_[:, 0]                    # ordenar por la coordenada x del centro
-    ordenado = ordenar_clusters_kmeans(modelo, datos, criterio)
+    ordenado = ordenar_clusters_kmeans(modelo, criterio)
     assert matriz_ari({"a": modelo.labels_, "b": ordenado.labels_}).loc["a", "b"] == pytest.approx(1.0)
     assert np.all(np.diff(ordenado.cluster_centers_[:, 0]) >= 0)  # etiqueta 0 = menor x
+    assert np.array_equal(ordenado.predict(datos), ordenado.labels_)
+    # Ningún punto cambia de grupo: la renumeración es una biyección exacta.
+    assert len(set(zip(modelo.labels_, ordenado.labels_))) == 3
 
 
 def test_distancias_k_vecinos_incluye_al_propio_punto():
