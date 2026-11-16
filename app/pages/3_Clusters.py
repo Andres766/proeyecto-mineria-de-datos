@@ -26,7 +26,7 @@ vista = c2.radio("Proyección", ["PCA 2D", "PCA 3D", "t-SNE"], horizontal=True)
 resaltar = c3.toggle(f"Resaltar {NOMBRE_CUENTAS_CLAVE.lower()}", value=algoritmo.startswith("K-Means"))
 
 if vista == "t-SNE":
-    st.warning(f"**t-SNE solo sirve para visualizar.** {nota_tsne()} En este proyecto se comprobó que el segmento más "
+    st.warning(f"**Advertencia sobre t-SNE.** {nota_tsne()} En este proyecto se comprobó que el segmento más "
                "disperso en la realidad aparece como el más compacto en el mapa.", icon="⚠️")
 
 # Grupo y color según el algoritmo elegido.

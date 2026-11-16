@@ -42,7 +42,7 @@ def test_clusters_todas_las_combinaciones(algoritmo, vista):
     at.radio[0].set_value(vista).run()
     assert not at.exception
     if vista == "t-SNE":
-        assert any("solo sirve para visualizar" in w.value for w in at.warning)
+        assert any("no para validar" in w.value for w in at.warning)
 
 
 @pytest.mark.parametrize("entrada, mensaje", [("abc", "número entero"), ("99999999", "No existe ningún cliente")])
