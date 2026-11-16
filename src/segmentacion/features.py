@@ -103,3 +103,76 @@ def tasa_devoluciones(ventas: pd.DataFrame, devoluciones: pd.DataFrame) -> pd.Se
     computable = devoluciones_computables(ventas, devoluciones)
     devuelto = computable.groupby("CustomerID")["ImporteComputable"].sum().reindex(comprado.index, fill_value=0.0)
     return (devuelto / comprado).clip(lower=0.0, upper=1.0).rename("tasa_devoluciones")
+
+
+# ---------------------------------------------------------------------------
+# RFM y variables de comportamiento
+# ---------------------------------------------------------------------------
+def fecha_referencia(ventas: pd.DataFrame) -> pd.Timestamp:
+    """Fecha de referencia para la Recency: día siguiente a la última fecha del dataset.
+
+    Se toma el día (sin hora) de la última transacción y se suma 1 día, de modo que la
+    compra más reciente tenga Recency = 1 y ningún cliente quede en 0.
+    """
+    return ventas["InvoiceDate"].max().normalize() + pd.Timedelta(days=1)
+
+
+def calcular_rfm(ventas: pd.DataFrame, referencia: pd.Timestamp) -> pd.DataFrame:
+    """Calcula Recency, Frequency y Monetary por cliente.
+
+    * **Recency:** días entre la fecha de referencia y el día de la última compra.
+    * **Frequency:** número de facturas distintas.
+    * **Monetary:** gasto total (suma de ``Importe`` de las ventas limpias).
+
+    Args:
+        ventas: ventas limpias con ``CustomerID``, ``InvoiceNo``, ``InvoiceDate`` e ``Importe``.
+        referencia: fecha de referencia (ver :func:`fecha_referencia`).
+
+    Returns:
+        DataFrame indexado por ``CustomerID`` con columnas ``recency``, ``frequency``, ``monetary``.
+    """
+    agg = ventas.groupby("CustomerID").agg(
+        ultima=("InvoiceDate", "max"),
+        frequency=("InvoiceNo", "nunique"),
+        monetary=("Importe", "sum"),
+    )
+    agg["recency"] = (referencia - agg["ultima"].dt.normalize()).dt.days
+    return agg[["recency", "frequency", "monetary"]]
+
+
+def calcular_variables_cliente(
+    ventas: pd.DataFrame, devoluciones: pd.DataFrame, referencia: pd.Timestamp
+) -> pd.DataFrame:
+    """Construye la tabla de variables por cliente: RFM + comportamiento + país.
+
+    Variables adicionales:
+
+    * ``ticket_promedio``: gasto medio por factura (monetary / frequency).
+    * ``productos_distintos``: número de StockCode distintos comprados.
+    * ``antiguedad``: días entre la primera compra y la fecha de referencia.
+    * ``dias_entre_compras``: tiempo medio (días) entre facturas consecutivas,
+      (última − primera) / (frequency − 1). **No está definida (NaN) si frequency = 1.**
+    * ``unidades_por_factura``: unidades totales / frequency.
+    * ``tasa_devoluciones``: ver :func:`tasa_devoluciones`.
+    * ``pais``: país con más facturas del cliente (solo para perfilar).
+
+    Returns:
+        DataFrame indexado por ``CustomerID``.
+    """
+    tabla = calcular_rfm(ventas, referencia)
+    extra = ventas.groupby("CustomerID").agg(
+        primera=("InvoiceDate", "min"),
+        ultima=("InvoiceDate", "max"),
+        productos_distintos=("StockCode", "nunique"),
+        unidades=("Quantity", "sum"),
+    )
+    tabla["ticket_promedio"] = tabla["monetary"] / tabla["frequency"]
+    tabla["productos_distintos"] = extra["productos_distintos"]
+    tabla["antiguedad"] = (referencia - extra["primera"].dt.normalize()).dt.days
+    lapso_dias = (extra["ultima"] - extra["primera"]).dt.total_seconds() / 86_400
+    tabla["dias_entre_compras"] = (lapso_dias / (tabla["frequency"] - 1)).where(tabla["frequency"] > 1)
+    tabla["unidades_por_factura"] = extra["unidades"] / tabla["frequency"]
+    tabla["tasa_devoluciones"] = tasa_devoluciones(ventas, devoluciones)
+    facturas_pais = ventas.drop_duplicates("InvoiceNo").groupby(["CustomerID", "Country"]).size()
+    tabla["pais"] = facturas_pais.sort_values(ascending=False).reset_index().drop_duplicates("CustomerID").set_index("CustomerID")["Country"]
+    return tabla
