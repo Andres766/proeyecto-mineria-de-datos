@@ -19,6 +19,11 @@ PARQUET_RAW: Path = DATA_RAW / "online_retail.parquet"
 PARQUET_LIMPIO: Path = DATA_PROCESSED / "transacciones_limpias.parquet"
 PARQUET_DEVOLUCIONES: Path = DATA_PROCESSED / "devoluciones.parquet"
 CSV_BITACORA: Path = DATA_PROCESSED / "bitacora_limpieza.csv"
+PARQUET_CLIENTES: Path = DATA_PROCESSED / "clientes_features.parquet"
+
+# Artefactos de modelado (los carga la app; no se reentrena).
+PREPROCESADOR: Path = MODELS / "preprocesador.joblib"
+JSON_FEATURES: Path = MODELS / "features.json"
 
 # Semilla única para todo proceso aleatorio.
 RANDOM_STATE: int = 42
