@@ -109,7 +109,7 @@ with tab_buscar:
                         + (f" · **{NOMBRE_CUENTAS_CLAVE}**" if c["cuenta_clave"] else "") + f" · {c['pais']}",
                         unsafe_allow_html=True)
             izq, der = st.columns([3, 2])
-            izq.dataframe(comparar_con_segmento(c.to_dict(), seg), hide_index=True)
+            izq.table(comparar_con_segmento(c.to_dict(), seg).set_index("Variable"))
             der.markdown(f"<span class='texto-secundario'>{segmentos[seg]['descripcion']}</span>", unsafe_allow_html=True)
             if c["dbscan"] == -1:
                 der.info("DBSCAN marca a este cliente como **atípico** (alejado de la masa principal de clientes).")
@@ -164,7 +164,7 @@ with tab_nuevo:
                              config={"displayModeBar": False})
             with der:
                 st.markdown("**Comparación con la mediana del segmento**")
-                st.dataframe(comparar_con_segmento({**r["valores"], "monetary": r["monetary"]}, seg), hide_index=True)
+                st.table(comparar_con_segmento({**r["valores"], "monetary": r["monetary"]}, seg).set_index("Variable"))
                 st.markdown(f"<span class='texto-secundario'>{segmentos[seg]['descripcion']}</span>", unsafe_allow_html=True)
 
             st.markdown(f"#### Estrategias recomendadas para {NOMBRES[seg]}")
