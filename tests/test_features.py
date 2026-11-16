@@ -89,3 +89,8 @@ def test_cliente_sin_devoluciones_tiene_tasa_cero():
     assert tasa(
         [(1, "A", 10, T0, 2.0), (2, "A", 1, T0, 2.0)], [(1, "A", -5, T0 + DIA, 2.0, False)]
     ) == {1: 0.5, 2: 0.0}  # 5 x 2 = 10 sobre 20
+
+
+def test_tasa_se_recorta_a_uno_si_la_devolucion_es_mas_cara():
+    # Compra 5 x 1 = 5; devuelve 5 unidades a 3 £ (precio mayor): 15 / 5 = 3 -> se recorta a 1.
+    assert tasa([(1, "A", 5, T0, 1.0)], [(1, "A", -5, T0 + DIA, 3.0, False)]) == {1: 1.0}

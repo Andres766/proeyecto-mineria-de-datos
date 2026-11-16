@@ -22,9 +22,12 @@ Definición coherente con la limpieza (ver ``limpieza.py``):
 
   Consecuencias: una devolución de un producto que el cliente no compró antes en el
   periodo (compra anterior al 01-12-2010, fuera de los datos) computa 0, y nadie
-  puede devolver más unidades de las que compró. El tope es en unidades: en importe
-  la tasa solo podría superar 1 si una devolución tuviera un precio unitario mayor
-  que el de la compra (el máximo observado se verifica en el notebook de features).
+  puede devolver más unidades de las que compró.
+
+* **Recorte a [0, 1]:** el tope anterior es en unidades; en importe la tasa podría
+  superar 1 si una devolución tuviera un precio unitario mayor que el de su compra.
+  Por robustez la tasa se recorta a [0, 1] (``clip``). En los datos actuales ningún
+  cliente supera 1, así que el recorte no cambia ningún valor; protege ante datos nuevos.
 """
 
 from __future__ import annotations
@@ -93,10 +96,10 @@ def tasa_devoluciones(ventas: pd.DataFrame, devoluciones: pd.DataFrame) -> pd.Se
         devoluciones: cancelaciones de producto con ``EmparejaCompra``.
 
     Returns:
-        Serie indexada por ``CustomerID`` (todos los clientes de ``ventas``), no negativa;
-        0 para clientes sin devoluciones computables.
+        Serie indexada por ``CustomerID`` (todos los clientes de ``ventas``) recortada a
+        [0, 1]; 0 para clientes sin devoluciones computables.
     """
     comprado = ventas.groupby("CustomerID")["Importe"].sum()
     computable = devoluciones_computables(ventas, devoluciones)
     devuelto = computable.groupby("CustomerID")["ImporteComputable"].sum().reindex(comprado.index, fill_value=0.0)
-    return (devuelto / comprado).rename("tasa_devoluciones")
+    return (devuelto / comprado).clip(lower=0.0, upper=1.0).rename("tasa_devoluciones")
