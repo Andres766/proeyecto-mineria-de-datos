@@ -24,7 +24,13 @@ from segmentacion import config
 from segmentacion.features import VARIABLES_CLUSTERING, calcular_vif, construir_preprocesador
 
 PLANTILLAS = config.RAIZ / "reports" / "plantillas"
-DOCUMENTOS = ["INFORME.md", "GUIA_SUSTENTACION.md", "GUION_DEMO.md"]
+# Plantilla -> destino (el README va en la raíz del repositorio).
+DOCUMENTOS = {
+    "INFORME.md": config.RAIZ / "reports" / "INFORME.md",
+    "GUIA_SUSTENTACION.md": config.RAIZ / "reports" / "GUIA_SUSTENTACION.md",
+    "GUION_DEMO.md": config.RAIZ / "reports" / "GUION_DEMO.md",
+    "README.md": config.RAIZ / "README.md",
+}
 
 
 # ---------------------------------------------------------------------------
@@ -382,13 +388,13 @@ def generar() -> list[str]:
     """Renderiza todas las plantillas en ``reports/``. Devuelve los nombres generados."""
     cifras = calcular_cifras()
     generados = []
-    for nombre in DOCUMENTOS:
+    for nombre, destino in DOCUMENTOS.items():
         texto = (PLANTILLAS / nombre).read_text(encoding="utf-8")
-        (config.RAIZ / "reports" / nombre).write_text(renderizar(texto, cifras), encoding="utf-8")
-        generados.append(nombre)
+        destino.write_text(renderizar(texto, cifras), encoding="utf-8")
+        generados.append(str(destino.relative_to(config.RAIZ)))
     return generados
 
 
 if __name__ == "__main__":
     for nombre in generar():
-        print(f"Generado reports/{nombre}")
+        print(f"Generado {nombre}")
