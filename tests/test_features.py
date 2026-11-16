@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import numpy as np
 import pandas as pd
 import pytest
 
@@ -94,3 +95,51 @@ def test_cliente_sin_devoluciones_tiene_tasa_cero():
 def test_tasa_se_recorta_a_uno_si_la_devolucion_es_mas_cara():
     # Compra 5 x 1 = 5; devuelve 5 unidades a 3 £ (precio mayor): 15 / 5 = 3 -> se recorta a 1.
     assert tasa([(1, "A", 5, T0, 1.0)], [(1, "A", -5, T0 + DIA, 3.0, False)]) == {1: 1.0}
+
+
+# ---------------------------------------------------------------------------
+# RFM y variables de comportamiento
+# ---------------------------------------------------------------------------
+from segmentacion.features import calcular_rfm, calcular_variables_cliente, fecha_referencia  # noqa: E402
+
+
+def ventas_rfm() -> pd.DataFrame:
+    """Cliente 1: 3 facturas (días 1, 11 y 31, a distintas horas); cliente 2: 1 factura."""
+    filas = [
+        ("F1", 1, "A", 2, "2011-01-01 09:00", 5.0, "France"),
+        ("F1", 1, "B", 1, "2011-01-01 09:00", 10.0, "France"),
+        ("F2", 1, "A", 4, "2011-01-11 18:00", 5.0, "France"),
+        ("F3", 1, "C", 10, "2011-01-31 09:00", 1.0, "Germany"),
+        ("F4", 2, "A", 1, "2011-01-21 12:00", 5.0, "Spain"),
+    ]
+    df = pd.DataFrame(filas, columns=["InvoiceNo", "CustomerID", "StockCode", "Quantity", "InvoiceDate", "UnitPrice", "Country"])
+    df["InvoiceDate"] = pd.to_datetime(df["InvoiceDate"])
+    return df.assign(Importe=df["Quantity"] * df["UnitPrice"])
+
+
+def test_fecha_referencia_es_dia_siguiente_al_ultimo():
+    assert fecha_referencia(ventas_rfm()) == pd.Timestamp("2011-02-01")
+
+
+def test_rfm():
+    v = ventas_rfm()
+    rfm = calcular_rfm(v, fecha_referencia(v))
+    assert rfm.loc[1].tolist() == [1, 3, 50.0]   # recency 1 día, 3 facturas, 10+10+20+10
+    assert rfm.loc[2].tolist() == [11, 1, 5.0]
+
+
+def test_variables_cliente():
+    v = ventas_rfm()
+    sin_dev = pd.DataFrame({"CustomerID": pd.Series(dtype="int64"), "StockCode": pd.Series(dtype="string"),
+                            "Quantity": pd.Series(dtype="int64"), "InvoiceDate": pd.Series(dtype="datetime64[ns]"),
+                            "UnitPrice": pd.Series(dtype="float64"), "EmparejaCompra": pd.Series(dtype="bool")})
+    x = calcular_variables_cliente(v, sin_dev, fecha_referencia(v))
+    c1 = x.loc[1]
+    assert c1["ticket_promedio"] == pytest.approx(50 / 3)
+    assert c1["productos_distintos"] == 3
+    assert c1["antiguedad"] == 31                       # del 01-01 al 01-02
+    assert c1["dias_entre_compras"] == pytest.approx(30 / 2)   # 30 días en 2 intervalos
+    assert c1["unidades_por_factura"] == pytest.approx(17 / 3)
+    assert c1["pais"] == "France"                       # 2 de sus 3 facturas
+    assert np.isnan(x.loc[2, "dias_entre_compras"])     # una sola factura: no definida
+    assert x["tasa_devoluciones"].tolist() == [0.0, 0.0]
