@@ -1,0 +1,735 @@
+{
+  "modelo_final": {
+    "algoritmo": "K-Means",
+    "k": 4,
+    "espacio": "log1p + winsor p1-p99 + StandardScaler",
+    "silhouette": 0.24021650872504333,
+    "davies_bouldin": 1.282257735276923,
+    "calinski_harabasz": 1926.4031017484135,
+    "estabilidad_mediana": 0.9584686852307202,
+    "estabilidad_p10": 0.929117177919852,
+    "ARI_descuantizado": 0.9414906315221454,
+    "ARI_baseline_rfm": 0.22778832000996702
+  },
+  "comparativa": [
+    {
+      "modelo": "K-Means k=2",
+      "n_clusters": 2,
+      "pct_ruido": 0.0,
+      "silhouette": 0.32575541849936396,
+      "davies_bouldin": 1.1783166435838826,
+      "calinski_harabasz": 2601.497653512987,
+      "estabilidad_mediana": 0.9873087778913154,
+      "estabilidad_p10": 0.9551377335363811,
+      "ARI_descuantizado": 0.9425151432053253,
+      "pct_segmento_menor": 41.836262719703974
+    },
+    {
+      "modelo": "K-Means k=4",
+      "n_clusters": 4,
+      "pct_ruido": 0.0,
+      "silhouette": 0.24021650872504333,
+      "davies_bouldin": 1.282257735276923,
+      "calinski_harabasz": 1926.4031017484135,
+      "estabilidad_mediana": 0.9584686852307202,
+      "estabilidad_p10": 0.929117177919852,
+      "ARI_descuantizado": 0.9414906315221454,
+      "pct_segmento_menor": 20.53654024051804
+    },
+    {
+      "modelo": "K-Means k=5",
+      "n_clusters": 5,
+      "pct_ruido": 0.0,
+      "silhouette": 0.23249400344390342,
+      "davies_bouldin": 1.2609688696350236,
+      "calinski_harabasz": 1757.396159635482,
+      "estabilidad_mediana": 0.9705811106214056,
+      "estabilidad_p10": 0.7440919120309519,
+      "ARI_descuantizado": 0.9363630268693375,
+      "pct_segmento_menor": 17.02127659574468
+    },
+    {
+      "modelo": "K-Means k=6",
+      "n_clusters": 6,
+      "pct_ruido": 0.0,
+      "silhouette": 0.22565027957300257,
+      "davies_bouldin": 1.277036720692991,
+      "calinski_harabasz": 1624.0136806781327,
+      "estabilidad_mediana": 0.9138535184073624,
+      "estabilidad_p10": 0.8391972766852358,
+      "ARI_descuantizado": 0.9176007896324171,
+      "pct_segmento_menor": 11.35522664199815
+    },
+    {
+      "modelo": "GMM full k=7 (BIC)",
+      "n_clusters": 7,
+      "pct_ruido": 0.0,
+      "silhouette": 0.14529870173142845,
+      "davies_bouldin": 1.6112920651746556,
+      "calinski_harabasz": 839.3180314946235,
+      "estabilidad_mediana": 0.7525993371105831,
+      "estabilidad_p10": 0.377698935936457,
+      "ARI_descuantizado": 0.8411658769990276,
+      "pct_segmento_menor": 2.890841813135985
+    },
+    {
+      "modelo": "GMM full k=5",
+      "n_clusters": 5,
+      "pct_ruido": 0.0,
+      "silhouette": 0.10084877214448851,
+      "davies_bouldin": 2.368638997512123,
+      "calinski_harabasz": 762.1570691821181,
+      "estabilidad_mediana": 0.5900994117341294,
+      "estabilidad_p10": 0.48056413040264734,
+      "ARI_descuantizado": 0.799351176114274,
+      "pct_segmento_menor": 4.324699352451434
+    },
+    {
+      "modelo": "DBSCAN",
+      "n_clusters": 1,
+      "pct_ruido": 3.769657724329325,
+      "silhouette": null,
+      "davies_bouldin": null,
+      "calinski_harabasz": null,
+      "estabilidad_mediana": 0.903176027467965,
+      "estabilidad_p10": 0.8836052109868746,
+      "ARI_descuantizado": 0.8918336569540994,
+      "pct_segmento_menor": 96.23034227567068
+    },
+    {
+      "modelo": "HDBSCAN",
+      "n_clusters": 2,
+      "pct_ruido": 15.17113783533765,
+      "silhouette": 0.2503021493796911,
+      "davies_bouldin": 1.360846090631898,
+      "calinski_harabasz": 1531.9120249935615,
+      "estabilidad_mediana": 0.9246214830855589,
+      "estabilidad_p10": 0.9176050157626202,
+      "ARI_descuantizado": 0.040611665737235216,
+      "pct_segmento_menor": 31.382978723404257
+    }
+  ],
+  "matriz_ari": {
+    "K-Means k=2": {
+      "K-Means k=2": 1.0,
+      "K-Means k=4": 0.2543,
+      "K-Means k=5": 0.228,
+      "K-Means k=6": 0.2093,
+      "GMM full k=7 (BIC)": 0.2426,
+      "GMM full k=5": 0.3517,
+      "DBSCAN": 0.0113,
+      "HDBSCAN": 0.1932,
+      "Baseline RFM": 0.2128
+    },
+    "K-Means k=4": {
+      "K-Means k=2": 0.2543,
+      "K-Means k=4": 1.0,
+      "K-Means k=5": 0.6177,
+      "K-Means k=6": 0.4565,
+      "GMM full k=7 (BIC)": 0.2014,
+      "GMM full k=5": 0.1992,
+      "DBSCAN": 0.0032,
+      "HDBSCAN": 0.127,
+      "Baseline RFM": 0.2278
+    },
+    "K-Means k=5": {
+      "K-Means k=2": 0.228,
+      "K-Means k=4": 0.6177,
+      "K-Means k=5": 1.0,
+      "K-Means k=6": 0.6699,
+      "GMM full k=7 (BIC)": 0.2128,
+      "GMM full k=5": 0.1849,
+      "DBSCAN": 0.0043,
+      "HDBSCAN": 0.1307,
+      "Baseline RFM": 0.2286
+    },
+    "K-Means k=6": {
+      "K-Means k=2": 0.2093,
+      "K-Means k=4": 0.4565,
+      "K-Means k=5": 0.6699,
+      "K-Means k=6": 1.0,
+      "GMM full k=7 (BIC)": 0.2871,
+      "GMM full k=5": 0.2309,
+      "DBSCAN": 0.0054,
+      "HDBSCAN": 0.1319,
+      "Baseline RFM": 0.2887
+    },
+    "GMM full k=7 (BIC)": {
+      "K-Means k=2": 0.2426,
+      "K-Means k=4": 0.2014,
+      "K-Means k=5": 0.2128,
+      "K-Means k=6": 0.2871,
+      "GMM full k=7 (BIC)": 1.0,
+      "GMM full k=5": 0.4447,
+      "DBSCAN": 0.0279,
+      "HDBSCAN": 0.2768,
+      "Baseline RFM": 0.3245
+    },
+    "GMM full k=5": {
+      "K-Means k=2": 0.3517,
+      "K-Means k=4": 0.1992,
+      "K-Means k=5": 0.1849,
+      "K-Means k=6": 0.2309,
+      "GMM full k=7 (BIC)": 0.4447,
+      "GMM full k=5": 1.0,
+      "DBSCAN": 0.0438,
+      "HDBSCAN": 0.3635,
+      "Baseline RFM": 0.2055
+    },
+    "DBSCAN": {
+      "K-Means k=2": 0.0113,
+      "K-Means k=4": 0.0032,
+      "K-Means k=5": 0.0043,
+      "K-Means k=6": 0.0054,
+      "GMM full k=7 (BIC)": 0.0279,
+      "GMM full k=5": 0.0438,
+      "DBSCAN": 1.0,
+      "HDBSCAN": 0.0723,
+      "Baseline RFM": 0.0031
+    },
+    "HDBSCAN": {
+      "K-Means k=2": 0.1932,
+      "K-Means k=4": 0.127,
+      "K-Means k=5": 0.1307,
+      "K-Means k=6": 0.1319,
+      "GMM full k=7 (BIC)": 0.2768,
+      "GMM full k=5": 0.3635,
+      "DBSCAN": 0.0723,
+      "HDBSCAN": 1.0,
+      "Baseline RFM": 0.2119
+    },
+    "Baseline RFM": {
+      "K-Means k=2": 0.2128,
+      "K-Means k=4": 0.2278,
+      "K-Means k=5": 0.2286,
+      "K-Means k=6": 0.2887,
+      "GMM full k=7 (BIC)": 0.3245,
+      "GMM full k=5": 0.2055,
+      "DBSCAN": 0.0031,
+      "HDBSCAN": 0.2119,
+      "Baseline RFM": 1.0
+    }
+  },
+  "barrido_kmeans": [
+    {
+      "k": 2,
+      "inercia": 10797.046579001926,
+      "silhouette": 0.32575541849936396,
+      "davies_bouldin": 1.1783166435838826,
+      "calinski_harabasz": 2601.497653512987,
+      "pct_cluster_menor": 41.836262719703974,
+      "estabilidad_mediana": 0.9884577206918719,
+      "estabilidad_p10": 0.9551377335363811,
+      "ARI_frequency_descuantizada": 0.9425151432053253
+    },
+    {
+      "k": 3,
+      "inercia": 8641.696468327717,
+      "silhouette": 0.2576531682264371,
+      "davies_bouldin": 1.2883918187219885,
+      "calinski_harabasz": 2163.684887549402,
+      "pct_cluster_menor": 29.209065679925995,
+      "estabilidad_mediana": 0.941744620846137,
+      "estabilidad_p10": 0.8879441353382918,
+      "ARI_frequency_descuantizada": 0.9451920972655266
+    },
+    {
+      "k": 4,
+      "inercia": 7398.558675505012,
+      "silhouette": 0.24021650872504333,
+      "davies_bouldin": 1.282257735276923,
+      "calinski_harabasz": 1926.4031017484135,
+      "pct_cluster_menor": 20.53654024051804,
+      "estabilidad_mediana": 0.9587952348505402,
+      "estabilidad_p10": 0.9329394280656452,
+      "ARI_frequency_descuantizada": 0.9414906315221454
+    },
+    {
+      "k": 5,
+      "inercia": 6582.4577285335345,
+      "silhouette": 0.2324940034439034,
+      "davies_bouldin": 1.2609688696350236,
+      "calinski_harabasz": 1757.396159635482,
+      "pct_cluster_menor": 17.02127659574468,
+      "estabilidad_mediana": 0.9708349047467794,
+      "estabilidad_p10": 0.7359550077684582,
+      "ARI_frequency_descuantizada": 0.9363630268693375
+    },
+    {
+      "k": 6,
+      "inercia": 6004.4852819213165,
+      "silhouette": 0.22565027957300254,
+      "davies_bouldin": 1.277036720692991,
+      "calinski_harabasz": 1624.013680678133,
+      "pct_cluster_menor": 11.35522664199815,
+      "estabilidad_mediana": 0.9284730980531339,
+      "estabilidad_p10": 0.8250836670945604,
+      "ARI_frequency_descuantizada": 0.9176007896324171
+    },
+    {
+      "k": 7,
+      "inercia": 5590.856592819839,
+      "silhouette": 0.2178137655506793,
+      "davies_bouldin": 1.2735862901375798,
+      "calinski_harabasz": 1506.3765277896969,
+      "pct_cluster_menor": 11.123959296947271,
+      "estabilidad_mediana": 0.9143382480688559,
+      "estabilidad_p10": 0.5155563890736858,
+      "ARI_frequency_descuantizada": 0.9170421673084356
+    },
+    {
+      "k": 8,
+      "inercia": 5223.32026685174,
+      "silhouette": 0.2109373562873728,
+      "davies_bouldin": 1.2431859331400705,
+      "calinski_harabasz": 1425.092203028107,
+      "pct_cluster_menor": 9.366327474560592,
+      "estabilidad_mediana": 0.8879146274598682,
+      "estabilidad_p10": 0.6968758439722063,
+      "ARI_frequency_descuantizada": 0.8844467765527112
+    },
+    {
+      "k": 9,
+      "inercia": 4941.404785050365,
+      "silhouette": 0.20885141133537022,
+      "davies_bouldin": 1.2440315818378949,
+      "calinski_harabasz": 1348.558181479276,
+      "pct_cluster_menor": 8.001850138760407,
+      "estabilidad_mediana": 0.6197781244433063,
+      "estabilidad_p10": 0.5300628332937428,
+      "ARI_frequency_descuantizada": 0.830296076342516
+    },
+    {
+      "k": 10,
+      "inercia": 4683.469582532403,
+      "silhouette": 0.21154936275699357,
+      "davies_bouldin": 1.2274746657517999,
+      "calinski_harabasz": 1290.8420932093359,
+      "pct_cluster_menor": 3.4458834412580943,
+      "estabilidad_mediana": 0.5739965575965364,
+      "estabilidad_p10": 0.44259008374511,
+      "ARI_frequency_descuantizada": 0.8410009824641796
+    }
+  ],
+  "gmm": {
+    "reg_covar": 0.05,
+    "tipo": "full",
+    "k": 7,
+    "rejilla_bic": [
+      {
+        "tipo": "full",
+        "k": 2,
+        "reg_covar": 0.05,
+        "bic": 43144.56386451748,
+        "aic": 42959.77771533346,
+        "varianza_empirica_min": 0.23103775360849294,
+        "max_un_nivel": 0.564900153609831,
+        "degenerado": false
+      },
+      {
+        "tipo": "full",
+        "k": 3,
+        "reg_covar": 0.05,
+        "bic": 42503.231145152735,
+        "aic": 42222.865953287335,
+        "varianza_empirica_min": 0.09511515487039825,
+        "max_un_nivel": 0.8022160664819945,
+        "degenerado": false
+      },
+      {
+        "tipo": "full",
+        "k": 4,
+        "reg_covar": 0.05,
+        "bic": 42354.48932040776,
+        "aic": 41978.54508586098,
+        "varianza_empirica_min": 0.09145474687108517,
+        "max_un_nivel": 0.7428419936373277,
+        "degenerado": false
+      },
+      {
+        "tipo": "full",
+        "k": 5,
+        "reg_covar": 0.05,
+        "bic": 42361.07600121181,
+        "aic": 41889.55272398364,
+        "varianza_empirica_min": 0.11845455972505138,
+        "max_un_nivel": 0.7183908045977011,
+        "degenerado": false
+      },
+      {
+        "tipo": "full",
+        "k": 6,
+        "reg_covar": 0.05,
+        "bic": 42310.19714714187,
+        "aic": 41743.094827232315,
+        "varianza_empirica_min": 0.09601601421750945,
+        "max_un_nivel": 0.7448194197750148,
+        "degenerado": false
+      },
+      {
+        "tipo": "full",
+        "k": 7,
+        "reg_covar": 0.05,
+        "bic": 42025.87372679322,
+        "aic": 41363.192364202274,
+        "varianza_empirica_min": 0.0765077027812482,
+        "max_un_nivel": 0.7839572192513369,
+        "degenerado": false
+      },
+      {
+        "tipo": "full",
+        "k": 8,
+        "reg_covar": 0.05,
+        "bic": 42168.40156143847,
+        "aic": 41410.14115616614,
+        "varianza_empirica_min": 0.07054582189236185,
+        "max_un_nivel": 0.9332321699544764,
+        "degenerado": false
+      },
+      {
+        "tipo": "full",
+        "k": 9,
+        "reg_covar": 0.05,
+        "bic": 42135.586964318194,
+        "aic": 41281.74751636448,
+        "varianza_empirica_min": 0.053229622740131946,
+        "max_un_nivel": 0.913151364764268,
+        "degenerado": false
+      },
+      {
+        "tipo": "full",
+        "k": 10,
+        "reg_covar": 0.05,
+        "bic": 42233.05338688078,
+        "aic": 41283.634896245676,
+        "varianza_empirica_min": 0.042392891110854286,
+        "max_un_nivel": 0.9241658240647118,
+        "degenerado": false
+      },
+      {
+        "tipo": "tied",
+        "k": 2,
+        "reg_covar": 0.05,
+        "bic": 43696.51129470004,
+        "aic": 43575.44450730362,
+        "varianza_empirica_min": 0.44628639664065095,
+        "max_un_nivel": 0.4143920595533499,
+        "degenerado": false
+      },
+      {
+        "tipo": "tied",
+        "k": 3,
+        "reg_covar": 0.05,
+        "bic": 43585.71043265859,
+        "aic": 43432.78396436837,
+        "varianza_empirica_min": 0.42618147134685597,
+        "max_un_nivel": 0.664,
+        "degenerado": false
+      },
+      {
+        "tipo": "tied",
+        "k": 4,
+        "reg_covar": 0.05,
+        "bic": 43519.1655118019,
+        "aic": 43334.37936261788,
+        "varianza_empirica_min": 0.38809417621517056,
+        "max_un_nivel": 0.6430976430976431,
+        "degenerado": false
+      },
+      {
+        "tipo": "tied",
+        "k": 5,
+        "reg_covar": 0.05,
+        "bic": 43517.133885430936,
+        "aic": 43300.488055353126,
+        "varianza_empirica_min": 0.3865464549694973,
+        "max_un_nivel": 0.6520833333333333,
+        "degenerado": false
+      },
+      {
+        "tipo": "tied",
+        "k": 6,
+        "reg_covar": 0.05,
+        "bic": 43086.840067329686,
+        "aic": 42838.33455635808,
+        "varianza_empirica_min": 0.2764876132502734,
+        "max_un_nivel": 0.678343949044586,
+        "degenerado": false
+      },
+      {
+        "tipo": "tied",
+        "k": 7,
+        "reg_covar": 0.05,
+        "bic": 43094.663531041646,
+        "aic": 42814.29833917625,
+        "varianza_empirica_min": 0.26715401572877384,
+        "max_un_nivel": 0.7241379310344828,
+        "degenerado": false
+      },
+      {
+        "tipo": "tied",
+        "k": 8,
+        "reg_covar": 0.05,
+        "bic": 43134.13969669,
+        "aic": 42821.914823930805,
+        "varianza_empirica_min": 0.264252357878367,
+        "max_un_nivel": 0.7002724795640327,
+        "degenerado": false
+      },
+      {
+        "tipo": "tied",
+        "k": 9,
+        "reg_covar": 0.05,
+        "bic": 43095.849032906495,
+        "aic": 42751.76447925351,
+        "varianza_empirica_min": 0.26838738715990895,
+        "max_un_nivel": 0.7924921793534933,
+        "degenerado": false
+      },
+      {
+        "tipo": "tied",
+        "k": 10,
+        "reg_covar": 0.05,
+        "bic": 43166.95602115184,
+        "aic": 42791.01178660506,
+        "varianza_empirica_min": 0.27059873075930624,
+        "max_un_nivel": 0.8073993471164309,
+        "degenerado": false
+      },
+      {
+        "tipo": "diag",
+        "k": 2,
+        "reg_covar": 0.05,
+        "bic": 44602.13578531655,
+        "aic": 44493.812870277645,
+        "varianza_empirica_min": 0.2104161576024393,
+        "max_un_nivel": 0.5841897233201581,
+        "degenerado": false
+      },
+      {
+        "tipo": "diag",
+        "k": 3,
+        "reg_covar": 0.05,
+        "bic": 43517.10002608295,
+        "aic": 43351.429685435214,
+        "varianza_empirica_min": 0.07411553193641929,
+        "max_un_nivel": 0.8453802639849152,
+        "degenerado": false
+      },
+      {
+        "tipo": "diag",
+        "k": 4,
+        "reg_covar": 0.05,
+        "bic": 43355.00577536151,
+        "aic": 43131.98800910494,
+        "varianza_empirica_min": 0.12434543929179308,
+        "max_un_nivel": 0.7414634146341463,
+        "degenerado": false
+      },
+      {
+        "tipo": "diag",
+        "k": 5,
+        "reg_covar": 0.05,
+        "bic": 43086.0003352984,
+        "aic": 42805.635143433,
+        "varianza_empirica_min": 0.083942494910604,
+        "max_un_nivel": 0.7721954576737784,
+        "degenerado": false
+      },
+      {
+        "tipo": "diag",
+        "k": 6,
+        "reg_covar": 0.05,
+        "bic": 42898.94472297571,
+        "aic": 42561.23210550148,
+        "varianza_empirica_min": 0.07914728063062103,
+        "max_un_nivel": 0.8228699551569507,
+        "degenerado": false
+      },
+      {
+        "tipo": "diag",
+        "k": 7,
+        "reg_covar": 0.05,
+        "bic": 42771.089177176254,
+        "aic": 42376.02913409319,
+        "varianza_empirica_min": 0.04796190212792084,
+        "max_un_nivel": 0.9112970711297071,
+        "degenerado": false
+      },
+      {
+        "tipo": "diag",
+        "k": 8,
+        "reg_covar": 0.05,
+        "bic": 42551.71076630518,
+        "aic": 42099.30329761328,
+        "varianza_empirica_min": 0.06830573223505043,
+        "max_un_nivel": 0.8534883720930233,
+        "degenerado": false
+      },
+      {
+        "tipo": "diag",
+        "k": 9,
+        "reg_covar": 0.05,
+        "bic": 42646.79430430488,
+        "aic": 42137.03941000415,
+        "varianza_empirica_min": 0.04589241666922583,
+        "max_un_nivel": 0.9080459770114943,
+        "degenerado": false
+      },
+      {
+        "tipo": "diag",
+        "k": 10,
+        "reg_covar": 0.05,
+        "bic": 42641.37374646414,
+        "aic": 42074.27142655458,
+        "varianza_empirica_min": 0.036845034706147084,
+        "max_un_nivel": 0.938508064516129,
+        "degenerado": false
+      },
+      {
+        "tipo": "spherical",
+        "k": 2,
+        "reg_covar": 0.05,
+        "bic": 46080.178797176515,
+        "aic": 46010.08749921017,
+        "varianza_empirica_min": 0.6434125153953392,
+        "max_un_nivel": 0.5546345139412208,
+        "degenerado": false
+      },
+      {
+        "tipo": "spherical",
+        "k": 3,
+        "reg_covar": 0.05,
+        "bic": 45058.351114762845,
+        "aic": 44950.02819972394,
+        "varianza_empirica_min": 0.497761914476527,
+        "max_un_nivel": 0.6345634563456346,
+        "degenerado": false
+      },
+      {
+        "tipo": "spherical",
+        "k": 4,
+        "reg_covar": 0.05,
+        "bic": 44597.290466660095,
+        "aic": 44450.73593454863,
+        "varianza_empirica_min": 0.4696740103008225,
+        "max_un_nivel": 0.6745329400196657,
+        "degenerado": false
+      },
+      {
+        "tipo": "spherical",
+        "k": 5,
+        "reg_covar": 0.05,
+        "bic": 44106.58224952846,
+        "aic": 43921.79610034444,
+        "varianza_empirica_min": 0.32435226196378825,
+        "max_un_nivel": 0.679160419790105,
+        "degenerado": false
+      },
+      {
+        "tipo": "spherical",
+        "k": 6,
+        "reg_covar": 0.05,
+        "bic": 43815.41589714506,
+        "aic": 43592.39813088849,
+        "varianza_empirica_min": 0.30049823099936146,
+        "max_un_nivel": 0.6793650793650794,
+        "degenerado": false
+      },
+      {
+        "tipo": "spherical",
+        "k": 7,
+        "reg_covar": 0.05,
+        "bic": 43739.77286421956,
+        "aic": 43478.523480890435,
+        "varianza_empirica_min": 0.2848401043460748,
+        "max_un_nivel": 0.7142857142857143,
+        "degenerado": false
+      },
+      {
+        "tipo": "spherical",
+        "k": 8,
+        "reg_covar": 0.05,
+        "bic": 43609.26500987428,
+        "aic": 43309.784009472605,
+        "varianza_empirica_min": 0.2484790756767189,
+        "max_un_nivel": 0.7013888888888888,
+        "degenerado": false
+      },
+      {
+        "tipo": "spherical",
+        "k": 9,
+        "reg_covar": 0.05,
+        "bic": 43579.69701885701,
+        "aic": 43241.98440138278,
+        "varianza_empirica_min": 0.2486156311715912,
+        "max_un_nivel": 0.7850162866449512,
+        "degenerado": false
+      },
+      {
+        "tipo": "spherical",
+        "k": 10,
+        "reg_covar": 0.05,
+        "bic": 43587.1908399775,
+        "aic": 43211.246605430715,
+        "varianza_empirica_min": 0.25438871077973,
+        "max_un_nivel": 0.8025,
+        "degenerado": false
+      }
+    ],
+    "bic_mejor_reg_defecto": 6256.864946283706
+  },
+  "dbscan": {
+    "eps": 0.7167855294906282,
+    "min_samples": 8,
+    "pct_ruido": 3.769657724329325
+  },
+  "hdbscan": {
+    "min_cluster_size": 86,
+    "min_samples": 8
+  },
+  "pca": {
+    "varianza_explicada": [
+      0.5604041182705457,
+      0.24135192413553555,
+      0.12166574838853386,
+      0.07657820920538484
+    ],
+    "cargas": {
+      "PC1": {
+        "recency": -0.499,
+        "frequency": 0.5618,
+        "ticket_promedio": 0.3268,
+        "productos_distintos": 0.5732
+      },
+      "PC2": {
+        "recency": 0.4162,
+        "frequency": -0.2958,
+        "ticket_promedio": 0.8425,
+        "productos_distintos": 0.1719
+      },
+      "PC3": {
+        "recency": 0.7359,
+        "frequency": 0.3732,
+        "ticket_promedio": -0.3266,
+        "productos_distintos": 0.461
+      },
+      "PC4": {
+        "recency": 0.1904,
+        "frequency": 0.6765,
+        "ticket_promedio": 0.2771,
+        "productos_distintos": -0.6552
+      }
+    }
+  },
+  "tsne": {
+    "perplexity_guardada": 30,
+    "perplexities_exploradas": [
+      5,
+      30,
+      50,
+      100
+    ],
+    "nota": "t-SNE conserva vecindarios locales, no distancias entre grupos: solo para visualizar, no para validar."
+  }
+}
