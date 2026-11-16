@@ -112,8 +112,8 @@ c1, c2 = st.container(), st.container()
 est = pd.DataFrame(datos["estacionalidad_pct_facturas"]).T
 est.index = [NOMBRES[int(i)] if i != "Total" else "Total" for i in est.index]
 est.columns = [etiqueta_mes(c) for c in est.columns]
-fig = go.Figure(go.Heatmap(z=est.values, x=est.columns, y=est.index, colorscale="Blues", text=est.round(1).values,
-                           texttemplate="%{text}", hovertemplate="%{y} · %{x}: %{z:.1f} % de sus facturas<extra></extra>",
+fig = go.Figure(go.Heatmap(z=est.values, x=est.columns, y=est.index, colorscale="Blues",
+                           texttemplate="%{z:.1f}", hovertemplate="%{y} · %{x}: %{z:.1f} % de sus facturas<extra></extra>",
                            colorbar=dict(title="%")))
 fig.update_layout(title="% de las facturas de cada segmento por mes")
 fig.update_yaxes(autorange="reversed")
@@ -123,7 +123,7 @@ c1.plotly_chart(estilo_figura(fig, 380, leyenda=False), config={"displayModeBar"
 
 rfm = pd.DataFrame({NOMBRES[s]: segmentos[s]["composicion_rfm_pct"] for s in IDS}).T
 fig = go.Figure(go.Heatmap(z=rfm.values, x=rfm.columns, y=rfm.index, colorscale="Blues", zmin=0, zmax=100,
-                           text=rfm.round(0).values, texttemplate="%{text}", colorbar=dict(title="%"),
+                           texttemplate="%{z:.0f}", colorbar=dict(title="%"),
                            hovertemplate="%{y}: %{z:.1f} % son «%{x}» en RFM<extra></extra>"))
 fig.update_layout(title="Composición de cada segmento según el baseline RFM")
 fig.update_yaxes(autorange="reversed")
