@@ -12,7 +12,7 @@ import streamlit as st
 
 from comun import (COLOR_POR_NOMBRE, ETIQUETAS, NOMBRE_CUENTAS_CLAVE,
                    NOMBRES, ORDEN_NOMBRES, artefactos, cargar_clientes, cargar_json, configurar_pagina,
-                   etiqueta_segmento, estilo_figura, libras, num, pct)
+                   etiqueta_segmento, estilo_figura, libras, mostrar_estrategias, num, pct)
 from segmentacion.prediccion import clasificar_cliente
 
 configurar_pagina("Explorador", "🧭")
@@ -23,22 +23,19 @@ segmentos = {g["id"]: g for g in cargar_json("segmentos")["segmentos"]}
 cuentas = cargar_json("segmentos")["cuentas_clave"]
 medianas = cargar_json("features")["medianas_variables_clustering"]
 VARS = ["recency", "frequency", "ticket_promedio", "productos_distintos", "monetary"]
-FORMATO_BASE = {"ticket_mediano": lambda v: libras(v, 2), "ingresos_temporada": lambda v: libras(v, 2)}
 
 
 def comparar_con_segmento(valores: dict, segmento: int) -> pd.DataFrame:
-    """Tabla cliente vs mediana de su segmento."""
+    """Tabla cliente frente a la mediana de su segmento, ya formateada en español."""
+    enteras = {"recency", "frequency", "productos_distintos"}
     filas = []
     for v in VARS:
         mediana = segmentos[segmento]["medianas"][v]
-        filas.append({"Variable": ETIQUETAS[v], "Cliente": valores[v], f"Mediana de {NOMBRES[segmento]}": mediana,
-                      "Diferencia": "por encima" if valores[v] > mediana else ("por debajo" if valores[v] < mediana else "igual")})
+        decimales = 0 if v in enteras else 2
+        filas.append({"Variable": ETIQUETAS[v], "Cliente": num(valores[v], decimales),
+                      "Mediana del segmento": num(mediana, decimales),
+                      "vs. mediana": "▲ mayor" if valores[v] > mediana else ("▼ menor" if valores[v] < mediana else "= igual")})
     return pd.DataFrame(filas)
-
-
-def tabla_estrategias(estrategias: list[dict]) -> pd.DataFrame:
-    return pd.DataFrame([{"Acción": e["accion"], "Momento": e["momento"], "KPI": e["kpi"],
-                          "Línea base": FORMATO_BASE.get(e["indicador"], pct)(e["linea_base"])} for e in estrategias])
 
 
 def mapa_pca(punto: tuple[float, float] | None = None, titulo: str = "") -> go.Figure:
@@ -130,7 +127,7 @@ with tab_nuevo:
                                   help="Días entre la última compra y la fecha de referencia (1 = ayer).")
         frequency = c2.number_input(ETIQUETAS["frequency"], min_value=1, value=int(medianas["frequency"]), step=1,
                                     help="Número de facturas (pedidos) distintas.")
-        ticket = c3.number_input(ETIQUETAS["ticket_promedio"], min_value=0.01, value=float(medianas["ticket_promedio"]),
+        ticket = c3.number_input(ETIQUETAS["ticket_promedio"], min_value=0.01, value=round(float(medianas["ticket_promedio"]), 2),
                                  step=10.0, format="%.2f", help="Gasto medio por factura.")
         productos = c4.number_input(ETIQUETAS["productos_distintos"], min_value=1, value=int(medianas["productos_distintos"]),
                                     step=1, help="Número de productos (StockCode) distintos comprados.")
@@ -162,7 +159,7 @@ with tab_nuevo:
                 st.warning(f"Algunos valores están fuera del rango de los clientes de entrenamiento y el modelo los acota, "
                            f"igual que hizo al entrenar: {detalle}.", icon="✂️")
 
-            izq, der = st.columns([3, 2])
+            izq, der = st.columns([1.25, 1])
             izq.plotly_chart(mapa_pca((r["pca"][0], r["pca"][1]), "El cliente nuevo sobre el mapa PCA de los segmentos"),
                              config={"displayModeBar": False})
             with der:
@@ -171,12 +168,10 @@ with tab_nuevo:
                 st.markdown(f"<span class='texto-secundario'>{segmentos[seg]['descripcion']}</span>", unsafe_allow_html=True)
 
             st.markdown(f"#### Estrategias recomendadas para {NOMBRES[seg]}")
-            st.dataframe(tabla_estrategias(segmentos[seg]["estrategias"]), hide_index=True,
-                         column_config={"Acción": st.column_config.TextColumn(width="large")})
+            mostrar_estrategias(segmentos[seg]["estrategias"])
             if r["cuenta_clave"]:
                 st.markdown(f"#### Además, como {NOMBRE_CUENTAS_CLAVE.lower()}")
-                st.dataframe(tabla_estrategias(cuentas["estrategias"]), hide_index=True,
-                             column_config={"Acción": st.column_config.TextColumn(width="large")})
+                mostrar_estrategias(cuentas["estrategias"])
 
             with st.expander("Ver el preprocesamiento aplicado (idéntico al del entrenamiento)"):
                 a_min, a_max = artefactos().limites_log
@@ -187,7 +182,7 @@ with tab_nuevo:
                     "Tras el recorte": [float(np.clip(np.log1p(r["valores"][v]), lo, hi)) for v, lo, hi in zip(r["z"], a_min, a_max)],
                     "Estandarizado (z)": list(r["z"].values()),
                 }, index=[ETIQUETAS[v] for v in r["z"]])
-                st.dataframe(pasos.style.format("{:,.3f}"))
+                st.dataframe(pasos.style.format("{:,.3f}", decimal=",", thousands="."))
                 st.caption("Los límites del recorte son los percentiles 1 y 99 calculados con los clientes de entrenamiento "
                            "y guardados en el preprocesador; no se recalculan con el cliente nuevo.")
     else:
