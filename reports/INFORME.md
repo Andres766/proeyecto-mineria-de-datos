@@ -63,7 +63,7 @@ evaluación y despliegue.
 - **Organización del código:** la lógica está en un paquete (`src/segmentacion`: carga, limpieza, características,
   modelado, evaluación, perfilamiento y predicción) y los notebooks solo la invocan y narran los resultados.
 - **Reproducibilidad:** todos los procesos aleatorios usan `random_state = 42`, las dependencias tienen versiones fijas
-  y el proyecto incluye 96 pruebas automáticas (limpieza, características, modelado, clasificación de clientes
+  y el proyecto incluye 100 pruebas automáticas (limpieza, características, modelado, clasificación de clientes
   nuevos y la propia aplicación).
 
 Las decisiones se tomaron comparando alternativas con datos y no por convención. Las más relevantes:
