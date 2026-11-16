@@ -3,12 +3,14 @@
 import plotly.graph_objects as go
 import streamlit as st
 
-from comun import (COLORES_SEGMENTO, NEUTRO, NOMBRE_CUENTAS_CLAVE, NOMBRES, cargar_clientes, cargar_json,
-                   configurar_pagina, estilo_figura, libras, num, pct)
+from comun import (COLORES_SEGMENTO, MESES, NEUTRO, NOMBRE_CUENTAS_CLAVE, NOMBRES, cargar_clientes, cargar_json,
+                   cargar_ventas, configurar_pagina, estilo_figura, libras, num, pct)
 
 configurar_pagina("Inicio", "🏠")
 
 clientes = cargar_clientes()
+fechas = cargar_ventas()["InvoiceDate"]
+inicio, fin = fechas.min(), fechas.max()
 metricas = cargar_json("metricas")
 segmentos = {g["id"]: g for g in cargar_json("segmentos")["segmentos"]}
 cuentas = cargar_json("segmentos")["cuentas_clave"]
@@ -18,7 +20,8 @@ comparativa = {fila["modelo"]: fila for fila in metricas["comparativa"]}
 st.title("Segmentación avanzada de clientes")
 st.markdown(
     "Proyecto final de **Inteligencia de Negocios y Minería de Datos**. A partir de las transacciones de un minorista "
-    "online británico de regalos (dataset *Online Retail*, UCI; diciembre 2010 – diciembre 2011) se identifican "
+    f"online británico de regalos (dataset *Online Retail*, UCI; {MESES[inicio.month]} {inicio.year} – "
+    f"{MESES[fin.month]} {fin.year}) se identifican "
     "perfiles de clientes con **clustering (K-Means, GMM, DBSCAN)** y **reducción de dimensionalidad (PCA, t-SNE)** "
     "para orientar estrategias de marketing."
 )
