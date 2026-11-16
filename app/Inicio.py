@@ -83,14 +83,17 @@ with izq:
     ids = sorted(segmentos)
     fig.add_bar(y=[NOMBRES[s] for s in ids], x=[segmentos[s]["indicadores"]["pct_clientes"] for s in ids],
                 orientation="h", name="% de clientes", marker_color=NEUTRO,
-                hovertemplate="%{y}: %{x:.1f} % de los clientes<extra></extra>")
+                hovertemplate="%{y}: %{x:.1f} % de los clientes<extra></extra>",
+                text=[pct(segmentos[s]["indicadores"]["pct_clientes"]) for s in ids], textposition="outside",
+                textfont=dict(color="#52514e"))
     fig.add_bar(y=[NOMBRES[s] for s in ids], x=[segmentos[s]["indicadores"]["pct_ingresos"] for s in ids],
                 orientation="h", name="% de ingresos", marker_color=[COLORES_SEGMENTO[s] for s in ids],
                 hovertemplate="%{y}: %{x:.1f} % de los ingresos<extra></extra>",
                 text=[pct(segmentos[s]["indicadores"]["pct_ingresos"]) for s in ids], textposition="outside")
-    fig.update_layout(barmode="group", title="Peso de cada segmento en clientes y en ingresos", bargap=0.25)
+    fig.update_layout(barmode="group", bargap=0.25,
+                      title="Peso de cada segmento: ingresos (barra de color) frente a clientes (barra gris)")
     fig.update_xaxes(title="%", range=[0, 85])
-    st.plotly_chart(estilo_figura(fig, 360), config={"displayModeBar": False})
+    st.plotly_chart(estilo_figura(fig, 380, leyenda=False), config={"displayModeBar": False})
 with der:
     for s in sorted(segmentos):
         g = segmentos[s]
@@ -109,4 +112,4 @@ st.markdown(
     "- **Explorador:** filtrar y buscar clientes, descargar CSV y **clasificar un cliente nuevo**."
 )
 st.caption("Todas las cifras de esta app se calculan con el código del proyecto y se leen de los artefactos generados "
-           "por los notebooks (models/*.json, data/processed/*.parquet).")
+           "por los notebooks (`models/*.json`, `data/processed/*.parquet`).")

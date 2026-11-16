@@ -130,10 +130,11 @@ def barra_color(segmento: int) -> str:
 def estilo_figura(fig: go.Figure, altura: int = 420, leyenda: bool = True) -> go.Figure:
     """Estilo común de Plotly: fondo claro, rejilla discreta, textos en tinta neutra."""
     fig.update_layout(
-        height=altura, template="plotly_white", margin=dict(l=10, r=10, t=50, b=10),
-        font=dict(color=TEXTO, size=13), title_font=dict(size=16),
-        legend=dict(title_text="", orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0) if leyenda else None,
+        height=altura, template="plotly_white", margin=dict(l=10, r=10, t=88 if leyenda else 56, b=10),
+        font=dict(color=TEXTO, size=13), title=dict(font=dict(size=16), y=0.985, yanchor="top", x=0.01, xanchor="left"),
+        legend=dict(title_text="", orientation="h", yanchor="bottom", y=1.01, xanchor="left", x=0) if leyenda else None,
         showlegend=leyenda, hoverlabel=dict(bgcolor="white", font_color=TEXTO),
+        separators=",.",  # coma decimal y punto de miles (formato español)
     )
     fig.update_xaxes(gridcolor="#ececea", zeroline=False)
     fig.update_yaxes(gridcolor="#ececea", zeroline=False)
@@ -143,6 +144,28 @@ def estilo_figura(fig: go.Figure, altura: int = 420, leyenda: bool = True) -> go
 def nota_tsne() -> str:
     """Advertencia sobre t-SNE (texto guardado en metricas.json en el notebook 03)."""
     return cargar_json("metricas")["tsne"]["nota"]
+
+
+FORMATO_LINEA_BASE = {"ticket_mediano": lambda v: libras(v, 2), "ingresos_temporada": lambda v: libras(v, 2)}
+
+
+def mostrar_estrategias(estrategias: list[dict]) -> None:
+    """Muestra cada estrategia como una ficha con acción, momento, KPI y línea base (texto completo)."""
+    for numero, e in enumerate(estrategias, start=1):
+        base = FORMATO_LINEA_BASE.get(e["indicador"], pct)(e["linea_base"])
+        with st.container(border=True):
+            accion, momento, kpi = st.columns([3, 1.6, 2])
+            accion.markdown(f"**{numero}. Acción**  \n{e['accion']}")
+            momento.markdown(f"**Momento**  \n{e['momento']}")
+            kpi.markdown(f"**KPI**  \n{e['kpi']}  \n"
+                         f"<span class='texto-secundario'>Línea base actual: <b>{base}</b></span>",
+                         unsafe_allow_html=True)
+
+
+def etiqueta_mes(periodo: str) -> str:
+    """'2011-09' -> 'sep 2011'."""
+    anio, mes = periodo.split("-")
+    return f"{MESES[int(mes)][:3]} {anio}"
 
 
 MARCADOR_CUENTA_CLAVE_PLOTLY = dict(symbol="diamond", size=10, line=dict(color=COLOR_BORDE_CUENTA_CLAVE, width=1.2))
