@@ -92,6 +92,54 @@ def eliminar_no_positivos(df: pd.DataFrame) -> pd.DataFrame:
     return df[(df["Quantity"] > 0) & (df["UnitPrice"] > 0)]
 
 
+def _emparejar_uno_a_uno(
+    izq: pd.DataFrame,
+    der: pd.DataFrame,
+    claves: list[str],
+    tolerancia: pd.Timedelta | None = None,
+) -> pd.DataFrame:
+    """Empareja filas de ``izq`` (anulaciones) con filas de ``der`` (compras) 1 a 1.
+
+    Cada anulación toma la compra más reciente con las mismas ``claves`` cuya fecha
+    sea anterior o igual a la suya (``merge_asof`` hacia atrás). Si varias
+    anulaciones eligen la misma compra, se la queda la primera en el tiempo y las
+    demás se reintentan en la siguiente vuelta contra las compras aún libres. Se
+    repite hasta que no aparecen pares nuevos, de modo que dos compras idénticas
+    anuladas por dos cancelaciones idénticas quedan emparejadas ambas.
+
+    Args:
+        izq: columnas ``claves`` + ``InvoiceDate`` + ``idx_izq``.
+        der: columnas ``claves`` + ``FechaVenta`` + ``idx_der``.
+        claves: columnas que deben coincidir exactamente.
+        tolerancia: distancia temporal máxima entre compra y anulación (opcional).
+
+    Returns:
+        DataFrame con las columnas ``idx_izq`` e ``idx_der`` de cada par.
+    """
+    izq = izq.sort_values("InvoiceDate")
+    der = der.sort_values("FechaVenta")
+    pares: list[pd.DataFrame] = []
+    while not izq.empty and not der.empty:
+        cruce = pd.merge_asof(
+            izq,
+            der,
+            left_on="InvoiceDate",
+            right_on="FechaVenta",
+            by=claves,
+            direction="backward",
+            tolerance=tolerancia,
+        )
+        cruce = cruce.dropna(subset=["idx_der"]).drop_duplicates(subset="idx_der", keep="first")
+        if cruce.empty:
+            break
+        pares.append(cruce[["idx_izq", "idx_der"]].astype("int64"))
+        izq = izq[~izq["idx_izq"].isin(cruce["idx_izq"])]
+        der = der[~der["idx_der"].isin(cruce["idx_der"])]
+    if not pares:
+        return pd.DataFrame({"idx_izq": pd.Series(dtype="int64"), "idx_der": pd.Series(dtype="int64")})
+    return pd.concat(pares, ignore_index=True)
+
+
 def emparejar_compras_anuladas(
     ventas: pd.DataFrame, cancelaciones: pd.DataFrame
 ) -> tuple[pd.Index, pd.Series]:
@@ -100,8 +148,7 @@ def emparejar_compras_anuladas(
     Una compra se considera anulada si existe una cancelación posterior (o en el
     mismo minuto) del mismo cliente, mismo producto, misma cantidad (en valor
     absoluto) y mismo precio unitario. Se toma la compra más reciente anterior a
-    la cancelación y el emparejamiento es 1 a 1: si dos cancelaciones apuntan a
-    la misma compra, solo la primera queda emparejada.
+    la cancelación y el emparejamiento es 1 a 1 (ver :func:`_emparejar_uno_a_uno`).
 
     Args:
         ventas: líneas de venta (cantidad > 0) con índice único.
@@ -111,33 +158,20 @@ def emparejar_compras_anuladas(
         Tupla ``(indices_ventas_anuladas, cancelacion_emparejada)``, donde la
         segunda es una Serie booleana alineada con ``cancelaciones``.
     """
-    claves = ["CustomerID", "StockCode", "UnitPrice"]
+    claves = ["CustomerID", "StockCode", "UnitPrice", "Cantidad"]
     izq = (
-        cancelaciones.assign(Cantidad=-cancelaciones["Quantity"])[claves + ["InvoiceDate", "Cantidad"]]
-        .rename_axis("idx_cancelacion")
+        cancelaciones.assign(Cantidad=-cancelaciones["Quantity"])[claves + ["InvoiceDate"]]
+        .rename_axis("idx_izq")
         .reset_index()
-        .sort_values("InvoiceDate")
     )
     der = (
-        ventas.rename(columns={"Quantity": "Cantidad"})[claves + ["InvoiceDate", "Cantidad"]]
-        .rename(columns={"InvoiceDate": "FechaVenta"})
-        .rename_axis("idx_venta")
+        ventas.rename(columns={"Quantity": "Cantidad", "InvoiceDate": "FechaVenta"})[claves + ["FechaVenta"]]
+        .rename_axis("idx_der")
         .reset_index()
-        .sort_values("FechaVenta")
     )
-    cruce = pd.merge_asof(
-        izq,
-        der,
-        left_on="InvoiceDate",
-        right_on="FechaVenta",
-        by=claves + ["Cantidad"],
-        direction="backward",
-    )
-    cruce = cruce.dropna(subset=["idx_venta"])
-    cruce = cruce.drop_duplicates(subset="idx_venta", keep="first")
-
-    anuladas = pd.Index(cruce["idx_venta"].astype("int64"))
-    emparejada = pd.Series(cancelaciones.index.isin(cruce["idx_cancelacion"]), index=cancelaciones.index)
+    pares = _emparejar_uno_a_uno(izq, der, claves)
+    anuladas = pd.Index(pares["idx_der"])
+    emparejada = pd.Series(cancelaciones.index.isin(pares["idx_izq"]), index=cancelaciones.index)
     return anuladas, emparejada
 
 
@@ -163,34 +197,19 @@ def emparejar_anulaciones_manuales(
     Returns:
         Índices de ``ventas`` que quedan anuladas.
     """
-    if manuales.empty:
-        return pd.Index([], dtype="int64")
+    claves = ["CustomerID", "ImporteAbs"]
     izq = (
-        manuales.assign(ImporteAbs=(-manuales["Quantity"] * manuales["UnitPrice"]).round(2))
-        [["CustomerID", "ImporteAbs", "InvoiceDate"]]
-        .rename_axis("idx_manual")
+        manuales.assign(ImporteAbs=(-manuales["Quantity"] * manuales["UnitPrice"]).round(2))[claves + ["InvoiceDate"]]
+        .rename_axis("idx_izq")
         .reset_index()
-        .sort_values("InvoiceDate")
     )
     der = (
         ventas.assign(ImporteAbs=(ventas["Quantity"] * ventas["UnitPrice"]).round(2))
-        [["CustomerID", "ImporteAbs", "InvoiceDate"]]
-        .rename(columns={"InvoiceDate": "FechaVenta"})
-        .rename_axis("idx_venta")
+        .rename(columns={"InvoiceDate": "FechaVenta"})[claves + ["FechaVenta"]]
+        .rename_axis("idx_der")
         .reset_index()
-        .sort_values("FechaVenta")
     )
-    cruce = pd.merge_asof(
-        izq,
-        der,
-        left_on="InvoiceDate",
-        right_on="FechaVenta",
-        by=["CustomerID", "ImporteAbs"],
-        direction="backward",
-        tolerance=ventana,
-    )
-    cruce = cruce.dropna(subset=["idx_venta"]).drop_duplicates(subset="idx_venta", keep="first")
-    return pd.Index(cruce["idx_venta"].astype("int64"))
+    return pd.Index(_emparejar_uno_a_uno(izq, der, claves, tolerancia=ventana)["idx_der"])
 
 
 # ---------------------------------------------------------------------------
