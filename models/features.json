@@ -1,0 +1,44 @@
+{
+  "fecha_referencia": "2011-12-10",
+  "n_clientes": 4324,
+  "variables_clustering": [
+    "recency",
+    "frequency",
+    "ticket_promedio",
+    "productos_distintos"
+  ],
+  "variables_perfil": [
+    "monetary",
+    "antiguedad",
+    "dias_entre_compras",
+    "unidades_por_factura",
+    "tasa_devoluciones",
+    "pais"
+  ],
+  "transformacion": "log1p",
+  "winsorizado_percentiles": [
+    1.0,
+    99.0
+  ],
+  "winsorizado_limites_log1p": {
+    "p1": {
+      "recency": 1.098612,
+      "frequency": 0.693147,
+      "ticket_promedio": 3.767352,
+      "productos_distintos": 0.693147
+    },
+    "p99": {
+      "recency": 5.913503,
+      "frequency": 3.426446,
+      "ticket_promedio": 7.555235,
+      "productos_distintos": 5.866468
+    }
+  },
+  "escalador": "StandardScaler",
+  "medianas_variables_clustering": {
+    "recency": 51.0,
+    "frequency": 2.0,
+    "ticket_promedio": 286.8606,
+    "productos_distintos": 35.0
+  }
+}
