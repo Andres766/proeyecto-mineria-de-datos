@@ -1,0 +1,9 @@
+[project]
+name = "segmentacion-online-retail"
+version = "0.1.0"
+description = "Segmentación avanzada de clientes (Online Retail, UCI) con clustering y reducción de dimensionalidad"
+requires-python = ">=3.11,<3.12"
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]

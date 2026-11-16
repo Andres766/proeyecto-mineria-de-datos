@@ -1,0 +1,24 @@
+# Entorno
+.venv/
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+.pytest_cache/
+
+# Datos crudos (se descargan con: python -m segmentacion.carga)
+data/raw/
+
+# Editor / SO
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store
+
+# Streamlit
+.streamlit/secrets.toml
+
+# Configuración local de Claude Code (personal)
+.claude/settings.local.json
+
+# Contexto local del asistente (no se versiona)
+CLAUDE.md
