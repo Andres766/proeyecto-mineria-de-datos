@@ -17,7 +17,7 @@ st.title("Modelos y validación")
 
 metricas = cargar_json("metricas")
 final = metricas["modelo_final"]
-comparativa = pd.DataFrame(metricas["comparativa"]).set_index("modelo")
+comparativa = pd.DataFrame(metricas["comparativa"]).set_index("modelo").apply(pd.to_numeric)
 barrido = pd.DataFrame(metricas["barrido_kmeans"])
 gmm = metricas["gmm"]
 rejilla = pd.DataFrame(gmm["rejilla_bic"])
@@ -38,7 +38,7 @@ tabla = comparativa.rename(columns={
     "estabilidad_p10": "Estabilidad (peor 10 %) ↑", "ARI_descuantizado": "Robustez a empates ↑",
     "pct_segmento_menor": "% segmento menor"})
 st.dataframe(
-    tabla.style.format(precision=3, na_rep="—").apply(
+    tabla.style.format(precision=3, na_rep="—", decimal=",", thousands=".").apply(
         lambda fila: ["background-color: #e6f0fb; font-weight: 600" if fila.name == NOMBRE_FINAL else "" for _ in fila], axis=1),
     column_config={"modelo": "Modelo"})
 st.caption("Métricas internas calculadas en el mismo espacio para todos; en DBSCAN y HDBSCAN el ruido se excluye. "
@@ -68,7 +68,8 @@ with tab_km:
                     line=dict(color=AZUL, width=2), marker=dict(size=8))
     fig.add_scatter(x=barrido["k"], y=barrido["estabilidad_p10"], mode="lines+markers", name="peor 10 % (percentil 10)",
                     line=dict(color=AZUL, width=2, dash="dot"), marker=dict(size=8, symbol="square"))
-    fig.add_hline(y=0.8, line_dash="dash", line_color="#9AA5B1", annotation_text="0,8", annotation_position="right")
+    fig.add_hline(y=0.8, line_dash="dash", line_color="#9AA5B1", annotation_text="umbral 0,8",
+                  annotation_position="bottom left")
     fig.update_layout(title="Estabilidad por k (ARI entre submuestras y modelo completo)")
     fig.update_xaxes(title="k", dtick=1)
     fig.update_yaxes(title="ARI", range=[0.3, 1.02])
