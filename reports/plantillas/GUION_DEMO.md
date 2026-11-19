@@ -27,13 +27,15 @@ También se ve la estacionalidad: el pico es {mes_pico}. Diciembre de 2011 sale 
 ## 1:30 – 2:45 · Modelos y validación
 
 **Mostrar:** la tabla comparativa (fila azul = modelo final), la pestaña K-Means (las cuatro métricas y la gráfica de
-estabilidad) y, de pasada, la pestaña GMM.
+estabilidad), de pasada la pestaña GMM y, al bajar, los tres indicadores de «Exactitud con datos de prueba».
 
 **Decir:** "Comparamos K-Means, GMM y DBSCAN. Las métricas internas premian k = 2, pero bajan con cada k: los clientes
 forman un continuo, y en ese caso siempre gana el k más pequeño. Por eso también medimos la estabilidad: repetimos el
 modelo en 50 submuestras. k = 5 parecía mejor, pero en el peor caso cae a {k5_estabilidad_p10}; k = 4 se mantiene en
 {final_estabilidad_p10}. GMM degeneraba por los empates en la frecuencia y lo corregimos con `reg_covar`, pero aun así
-quedó peor. DBSCAN no encuentra grupos: lo usamos para detectar atípicos."
+quedó peor. DBSCAN no encuentra grupos: lo usamos para detectar atípicos. Y con clientes que el modelo no vio al
+entrenar, les asigna el mismo segmento en el {val_reasignacion} de los casos; un árbol de decisión reconoce los
+segmentos con un {val_arbol_prueba} de exactitud en prueba."
 
 ## 2:45 – 3:45 · Clusters
 
