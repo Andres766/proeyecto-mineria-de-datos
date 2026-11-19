@@ -1,5 +1,6 @@
 """Modelos y validación: métricas de los algoritmos, codo/silhouette/BIC y justificación del modelo final."""
 
+import re
 import sys
 from pathlib import Path
 
@@ -162,3 +163,97 @@ with st.container(border=True):
         "mínimo, y dos segmentos no permiten estrategias diferenciadas. Tampoco k = 5, por su inestabilidad. GMM quedó por "
         "detrás en todas las métricas, y DBSCAN y HDBSCAN no encuentran grupos separados por densidad."
     )
+
+# ------------------------------------------------------------------ Exactitud con datos de prueba
+validacion = cargar_json("validacion")
+reasignacion, clasif = validacion["reasignacion"], validacion["clasificadores"]
+comparativa_clf = pd.DataFrame(clasif["comparativa"]).set_index("modelo")
+NOMBRE_ARBOL, NOMBRE_BOSQUE = "Árbol de decisión ajustado", "Bosque aleatorio (300 árboles)"
+mejores = clasif["mejores_parametros"]
+profundidad = "sin límite" if mejores["max_depth"] is None else mejores["max_depth"]
+
+st.subheader("Exactitud con datos de prueba")
+st.markdown(
+    "La segmentación es **no supervisada**: no existe un «segmento verdadero» con el que comparar, así que la exactitud "
+    "no se mide sobre los clusters directamente. Se mide con clientes que el modelo **no vio al entrenar**: "
+    "(1) reasignando su segmento con un modelo entrenado sin ellos y (2) entrenando clasificadores que aprendan los "
+    f"segmentos con el {pct(100 * (1 - clasif['proporcion_prueba']), 0)} de los clientes y evaluándolos en el "
+    f"{pct(100 * clasif['proporcion_prueba'], 0)} restante.")
+e1, e2, e3 = st.columns(3)
+e1.metric("Reasignación de clientes nuevos", pct(100 * reasignacion["media"]), border=True,
+          help=f"Media de {reasignacion['n_pliegues']} pliegues (entre {pct(100 * reasignacion['minimo'])} y "
+               f"{pct(100 * reasignacion['maximo'])}): se reentrena el preprocesado y K-Means sin esos clientes y se "
+               "compara su segmento con el del modelo final.")
+e2.metric("Árbol de decisión (prueba)", pct(100 * comparativa_clf.loc[NOMBRE_ARBOL, "exactitud_prueba"]), border=True,
+          help=f"Profundidad {profundidad}, mínimo {mejores['min_samples_leaf']} cliente(s) por hoja, elegidos con "
+               f"validación cruzada entre {clasif['n_combinaciones']} combinaciones. Prueba: "
+               f"{num(clasif['n_prueba'])} clientes.")
+e3.metric("Bosque aleatorio (prueba)", pct(100 * comparativa_clf.loc[NOMBRE_BOSQUE, "exactitud_prueba"]), border=True,
+          help="300 árboles con los parámetros por defecto; mismo conjunto de prueba.")
+
+tab_reas, tab_clf, tab_reglas, tab_ajustes = st.tabs(
+    ["Reasignación", "Clasificadores", "Reglas del árbol", "Ajustes del proyecto"])
+
+with tab_reas:
+    pliegues = pd.DataFrame(reasignacion["pliegues"])
+    fig = go.Figure(go.Bar(x=[f"Pliegue {p}" for p in pliegues["pliegue"]], y=100 * pliegues["exactitud"],
+                           marker_color=AZUL, text=[pct(100 * v) for v in pliegues["exactitud"]], textposition="outside",
+                           hovertemplate="%{x}: %{y:.1f} %<extra></extra>"))
+    fig.update_layout(title="Exactitud de reasignación en cada pliegue (validación cruzada estratificada)")
+    fig.update_yaxes(title="% de clientes con el mismo segmento", range=[90, 100.5])
+    st.plotly_chart(estilo_figura(fig, 360, leyenda=False), config={"displayModeBar": False})
+    st.caption(f"En cada pliegue se entrena con unos {num(pliegues['n_entrenamiento'].iloc[0])} clientes y se prueba "
+               f"con unos {num(pliegues['n_prueba'].iloc[0])}; cada cliente se prueba una sola vez. Antes de comparar se "
+               "alinea la numeración de los clusters (algoritmo húngaro). Los pocos desacuerdos son clientes en la "
+               "frontera entre dos segmentos vecinos.")
+
+with tab_clf:
+    tabla_clf = (100 * comparativa_clf).rename(columns={
+        "exactitud_cv": "Exactitud validación cruzada", "exactitud_cv_std": "Desv. típica CV",
+        "exactitud_prueba": "Exactitud en prueba"}).rename_axis("Clasificador")
+    st.table(tabla_clf.style.format("{:.1f} %", decimal=","))
+    curva = pd.DataFrame(clasif["curva_profundidad"])
+    fig = go.Figure()
+    fig.add_scatter(x=curva["profundidad"], y=100 * curva["exactitud_entrenamiento"], name="Entrenamiento",
+                    mode="lines+markers", line=dict(color="#9AA5B1", width=2),
+                    hovertemplate="Profundidad %{x}: %{y:.1f} %<extra>Entrenamiento</extra>")
+    fig.add_scatter(x=curva["profundidad"], y=100 * curva["exactitud_cv"], name="Validación cruzada",
+                    mode="lines+markers", line=dict(color=AZUL, width=2.5),
+                    hovertemplate="Profundidad %{x}: %{y:.1f} %<extra>Validación cruzada</extra>")
+    fig.update_layout(title="Árbol: exactitud según la profundidad")
+    fig.update_xaxes(title="profundidad máxima", type="category")
+    fig.update_yaxes(title="exactitud (%)")
+    st.plotly_chart(estilo_figura(fig, 380), config={"displayModeBar": False})
+    matriz = pd.DataFrame(clasif["matriz_confusion"], index=clasif["nombres"], columns=clasif["nombres"])
+    porcentaje = 100 * matriz.div(matriz.sum(axis=1), axis=0)
+    fig = go.Figure(go.Heatmap(z=porcentaje.values, x=matriz.columns, y=matriz.index, colorscale="Blues", zmin=0, zmax=100,
+                               text=matriz.values, texttemplate="%{text}<br>(%{z:.1f} %)",
+                               textfont=dict(size=14),
+                               colorbar=dict(title="% fila"),
+                               hovertemplate="Real %{y} → predicho %{x}: %{text} clientes (%{z:.1f} %)<extra></extra>"))
+    fig.update_layout(title="Matriz de confusión del árbol (prueba)")
+    fig.update_xaxes(title="predicho")
+    fig.update_yaxes(title="real", autorange="reversed")
+    st.plotly_chart(estilo_figura(fig, 460, leyenda=False), config={"displayModeBar": False})
+    reporte = pd.DataFrame(clasif["reporte"]).set_index("segmento").rename_axis("Segmento")
+    reporte[["precision", "recall", "f1"]] *= 100
+    st.table(reporte.rename(columns={"precision": "Precisión", "recall": "Sensibilidad (recall)", "f1": "F1",
+                                     "soporte": "Clientes en prueba"})
+             .style.format({"Precisión": "{:.1f} %", "Sensibilidad (recall)": "{:.1f} %", "F1": "{:.1f} %",
+                            "Clientes en prueba": "{:.0f}"}, decimal=","))
+    st.caption("Los hiperparámetros del árbol se eligen solo con validación cruzada dentro del entrenamiento; el conjunto "
+               "de prueba se usa una única vez al final. Los clasificadores usan las cuatro variables en su escala "
+               "original. Los errores se concentran entre segmentos vecinos, sobre todo con «En crecimiento».")
+
+with tab_reglas:
+    st.markdown(f"Un árbol de **profundidad 3** acierta el "
+                f"{pct(100 * comparativa_clf.loc['Árbol de decisión (profundidad 3)', 'exactitud_prueba'])} en prueba con "
+                "reglas que se leen en unidades de negocio:")
+    reglas = re.sub(r"(\d)\.(\d)", r"\1,\2", clasif["reglas_profundidad_3"]).replace("class:", "segmento:")
+    st.code(reglas, language=None)
+
+with tab_ajustes:
+    ajustes = pd.DataFrame(validacion["ajustes"]).rename(columns=str.capitalize)
+    st.table(ajustes.set_index(["Etapa", "Parámetro"]))
+    st.caption("Hiperparámetros y decisiones de modelado probados en los notebooks 02, 03 y 05, con el valor elegido y el "
+               "criterio de elección.")
