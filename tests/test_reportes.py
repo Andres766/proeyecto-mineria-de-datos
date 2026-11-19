@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from segmentacion.reportes import libras, num, numerar_figuras_y_tablas, pct, renderizar
+from segmentacion.reportes import libras, num, numerar_figuras_y_tablas, pct, reglas_arbol_en_texto, renderizar
 
 
 def test_formato_espanol():
@@ -29,3 +29,13 @@ def test_numeracion_de_figuras_y_tablas():
     assert "*Figura 1. Primera*" in salida
     assert "*Tabla 1. Resumen*" in salida
     assert "*Figura 2. Segunda*" in salida
+
+
+def test_reglas_del_arbol_en_texto():
+    from sklearn.tree import DecisionTreeClassifier, export_text
+
+    arbol = DecisionTreeClassifier(max_depth=2, random_state=0).fit(
+        [[1, 10], [2, 20], [8, 10], [9, 40]], ["A", "A", "B", "C"])
+    texto = export_text(arbol, feature_names=["Facturas", "Ticket"], class_names=["A", "B", "C"], decimals=1)
+    assert reglas_arbol_en_texto(texto) == ["Facturas ≤ 5,0 → **A**", "Facturas > 5,0 y Facturas ≤ 8,5 → **B**",
+                                            "Facturas > 5,0 y Facturas > 8,5 → **C**"]

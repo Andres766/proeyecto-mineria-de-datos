@@ -29,6 +29,7 @@ DOCUMENTOS = {
     "INFORME.md": config.RAIZ / "reports" / "INFORME.md",
     "GUIA_SUSTENTACION.md": config.RAIZ / "reports" / "GUIA_SUSTENTACION.md",
     "GUION_DEMO.md": config.RAIZ / "reports" / "GUION_DEMO.md",
+    "RESUMEN_EXPOSICION.md": config.RAIZ / "reports" / "RESUMEN_EXPOSICION.md",
     "README.md": config.RAIZ / "README.md",
 }
 
@@ -303,6 +304,8 @@ def _cifras_segmentos(c: dict) -> None:
         valor = ind["pct_una_compra_en_temporada"]
         c[f"s{s}_una_compra_temporada"] = "—" if valor is None or np.isnan(valor) else pct(valor)
         c[f"s{s}_captados_temporada"] = pct(ind["pct_captados_temporada"])
+        c[f"s{s}_estrategia"] = g["estrategias"][0]["accion"]
+        c[f"s{s}_estrategia_kpi"] = g["estrategias"][0]["kpi"]
         filas.append([g["nombre"], num(ind["clientes"]), pct(ind["pct_clientes"]), pct(ind["pct_ingresos"]),
                       num(med["recency"]), num(med["frequency"]), libras(ind["ticket_mediano"], 2),
                       num(med["productos_distintos"]), libras(ind["monetary_mediano"], 2)])
@@ -317,6 +320,8 @@ def _cifras_segmentos(c: dict) -> None:
     c["ck_gasto"] = libras(ic["monetary_mediano"], 2)
     c["ck_umbral"] = libras(ck["umbral_gasto"], 2)
     c["ck_pct_devuelve"] = pct(ic["pct_devuelve"])
+    c["ck_estrategia"] = ck["estrategias"][0]["accion"]
+    c["ck_estrategia_kpi"] = ck["estrategias"][0]["kpi"]
     filas.append([f"↳ {ck['nombre']} (subgrupo de VIP)", num(ic["clientes"]), pct(ic["pct_clientes"]), pct(ic["pct_ingresos"]),
                   num(ck["medianas"]["recency"]), num(ck["medianas"]["frequency"]), libras(ic["ticket_mediano"], 2),
                   num(ck["medianas"]["productos_distintos"]), libras(ic["monetary_mediano"], 2)])
@@ -336,6 +341,78 @@ def _cifras_segmentos(c: dict) -> None:
     c["lista_estrategias"] = "\n".join(lineas).strip()
 
 
+def reglas_arbol_en_texto(reglas: str) -> list[str]:
+    """Convierte la salida de ``sklearn.tree.export_text`` en una regla legible por hoja.
+
+    Ejemplo de regla: «Número de facturas ≤ 4,5 y Ticket promedio (£) > 264,8 → Grandes ocasionales».
+    """
+    condiciones: list[str] = []
+    salida = []
+    for linea in reglas.splitlines():
+        if "--- " not in linea:
+            continue
+        nivel = linea.index("--- ") // 4
+        texto = linea.split("--- ", 1)[1].strip()
+        texto = re.sub(r"(\d)\.(\d)", r"\1,\2", texto).replace("<=", "≤")
+        texto = re.sub(r"\s+", " ", texto)
+        if texto.startswith("class:"):
+            salida.append(f"{' y '.join(condiciones[:nivel])} → **{texto.removeprefix('class:').strip()}**")
+        else:
+            condiciones[nivel:] = [texto]
+    return salida
+
+
+def _cifras_validacion(c: dict) -> None:
+    datos = json.loads(config.JSON_VALIDACION.read_text(encoding="utf-8"))
+    reasignacion, clasif = datos["reasignacion"], datos["clasificadores"]
+    c["val_reasignacion"] = pct(100 * reasignacion["media"])
+    c["val_reasignacion_min"] = pct(100 * reasignacion["minimo"])
+    c["val_reasignacion_max"] = pct(100 * reasignacion["maximo"])
+    c["val_reasignacion_desacuerdo"] = pct(100 * (1 - reasignacion["media"]))
+    c["val_n_pliegues"] = str(reasignacion["n_pliegues"])
+    c["val_pct_prueba"] = pct(100 * clasif["proporcion_prueba"], 0)
+    c["val_pct_entrenamiento"] = pct(100 * (1 - clasif["proporcion_prueba"]), 0)
+    c["val_n_entrenamiento"] = num(clasif["n_entrenamiento"])
+    c["val_n_prueba"] = num(clasif["n_prueba"])
+    c["val_n_combinaciones"] = str(clasif["n_combinaciones"])
+    mejores = clasif["mejores_parametros"]
+    c["val_arbol_profundidad"] = "sin límite" if mejores["max_depth"] is None else str(mejores["max_depth"])
+    c["val_arbol_min_hoja"] = str(mejores["min_samples_leaf"])
+
+    comparativa = {fila["modelo"]: fila for fila in clasif["comparativa"]}
+    claves = {"Árbol de decisión (profundidad 3)": "arbol3", "Árbol de decisión ajustado": "arbol",
+              "Bosque aleatorio (300 árboles)": "bosque"}
+    for modelo, clave in claves.items():
+        c[f"val_{clave}_prueba"] = pct(100 * comparativa[modelo]["exactitud_prueba"])
+        c[f"val_{clave}_cv"] = pct(100 * comparativa[modelo]["exactitud_cv"])
+    c["tabla_clasificadores"] = tabla_markdown(pd.DataFrame([{
+        "Clasificador": modelo,
+        "Exactitud en validación cruzada": f"{pct(100 * fila['exactitud_cv'])} ± {pct(100 * fila['exactitud_cv_std'])}",
+        "Exactitud en prueba": pct(100 * fila["exactitud_prueba"]),
+    } for modelo, fila in comparativa.items()]))
+
+    curva = {fila["profundidad"]: fila for fila in clasif["curva_profundidad"]}
+    for profundidad in ("3", "5"):
+        c[f"val_arbol_cv_prof{profundidad}"] = pct(100 * curva[profundidad]["exactitud_cv"])
+    c["val_arbol_entrenamiento_max"] = pct(100 * max(f["exactitud_entrenamiento"] for f in curva.values()))
+
+    reporte = {fila["segmento"]: fila for fila in clasif["reporte"]}
+    c["tabla_reporte_segmentos"] = tabla_markdown(pd.DataFrame([{
+        "Segmento": nombre, "Precisión": pct(100 * fila["precision"]), "Sensibilidad": pct(100 * fila["recall"]),
+        "F1": pct(100 * fila["f1"]), "Clientes en prueba": num(fila["soporte"]),
+    } for nombre, fila in reporte.items()]))
+    peor = min(reporte.values(), key=lambda fila: fila["f1"])
+    c["val_peor_segmento"] = peor["segmento"]
+    c["val_peor_precision"] = pct(100 * peor["precision"])
+    c["val_peor_recall"] = pct(100 * peor["recall"])
+    c["reglas_arbol3"] = "\n".join(f"- {regla}" for regla in reglas_arbol_en_texto(clasif["reglas_profundidad_3"]))
+
+    ajustes = pd.DataFrame(datos["ajustes"])
+    c["n_ajustes"] = str(len(ajustes))
+    c["tabla_ajustes"] = tabla_markdown(ajustes.rename(columns=str.capitalize)[
+        ["Etapa", "Parámetro", "Valores probados", "Elegido", "Criterio"]])
+
+
 def _cifras_pruebas(c: dict) -> None:
     salida = subprocess.run([sys.executable, "-m", "pytest", "--collect-only", "-q"], capture_output=True, text=True,
                             cwd=config.RAIZ)
@@ -343,12 +420,15 @@ def _cifras_pruebas(c: dict) -> None:
     if not recogidas:
         raise RuntimeError(f"No se pudo contar las pruebas:\n{salida.stdout}\n{salida.stderr}")
     c["n_pruebas"] = recogidas.group(1)
+    guia = (PLANTILLAS / "GUIA_SUSTENTACION.md").read_text(encoding="utf-8")
+    c["n_preguntas_guia"] = str(len(re.findall(r"^\*\*\d+\. ", guia, flags=re.MULTILINE)))
 
 
 def calcular_cifras() -> dict[str, str]:
     """Calcula todas las cifras que usan las plantillas (como texto ya formateado)."""
     cifras: dict[str, str] = {}
-    for paso in (_cifras_eda, _cifras_features, _cifras_modelos, _cifras_segmentos, _cifras_pruebas):
+    for paso in (_cifras_eda, _cifras_features, _cifras_modelos, _cifras_segmentos, _cifras_validacion,
+                 _cifras_pruebas):
         paso(cifras)
     return cifras
 
