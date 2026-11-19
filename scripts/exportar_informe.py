@@ -1,8 +1,9 @@
-"""Exporta reports/INFORME.md a Word (.docx) y PDF con portada, índices, figuras numeradas y referencias.
+"""Exporta a Word (.docx) y PDF el informe y el resumen para la exposición, con portada, índices y figuras numeradas.
 
 Uso (desde la raíz del proyecto, en Windows con Microsoft Word instalado para el PDF):
-    python -m segmentacion.reportes          # 1) regenerar INFORME.md con las cifras actuales
-    python scripts/exportar_informe.py       # 2) INFORME.docx + INFORME.pdf
+    python -m segmentacion.reportes                         # 1) regenerar los .md con las cifras actuales
+    python scripts/exportar_informe.py                      # 2) INFORME y RESUMEN_EXPOSICION (.docx + .pdf)
+    python scripts/exportar_informe.py RESUMEN_EXPOSICION   #    o solo uno de ellos
 
 Los datos de la portada (autor, docente, fecha…) están en reports/portada.json.
 El índice y el índice de figuras son campos de Word: los actualiza scripts/docx_a_pdf.ps1 antes de exportar
@@ -31,6 +32,12 @@ REPORTES = RAIZ / "reports"
 AZUL_OSCURO = RGBColor(0x1F, 0x38, 0x64)
 GRIS_TEXTO = RGBColor(0x52, 0x51, 0x4E)
 ANCHO_MAX_CM, ALTO_MAX_CM = 16.0, 19.0
+FILAS_MAX_TABLA_ENTERA = 10   # las tablas más largas pueden partirse entre páginas
+# Documento -> subtítulo de portada (None = el de portada.json) e índice de figuras.
+DOCUMENTOS = {
+    "INFORME": {"subtitulo": None, "indice_figuras": True},
+    "RESUMEN_EXPOSICION": {"subtitulo": "Resumen para la exposición y preguntas probables", "indice_figuras": False},
+}
 
 
 # ---------------------------------------------------------------------------
@@ -165,9 +172,10 @@ def portada(doc: Document, datos: dict) -> None:
     p.add_run(datos["fecha"])
 
 
-def indices(doc: Document) -> None:
+def indices(doc: Document, indice_figuras: bool = True) -> None:
     """Índice general e índice de figuras, cada uno en su página (salto antes del título, no párrafos de salto)."""
     titulos = [("Índice", 'TOC \\o "1-2" \\h \\z \\u'), ("Índice de figuras", 'TOC \\h \\z \\c "Figura"')]
+    titulos = titulos if indice_figuras else titulos[:1]
     for n, (titulo, instruccion) in enumerate(titulos):
         p = doc.add_paragraph()
         p.paragraph_format.page_break_before = n > 0
@@ -193,7 +201,7 @@ def agregar_tabla(doc: Document, filas: list[str]) -> None:
     tabla = doc.add_table(rows=1 + len(cuerpo), cols=len(cabecera))
     tabla.style = "Table Grid"
     tabla.alignment = WD_TABLE_ALIGNMENT.CENTER
-    tamano = 8.5 if len(cabecera) > 6 else 9.5
+    tamano = 8.5 if len(cabecera) > 6 or len(cuerpo) > FILAS_MAX_TABLA_ENTERA else 9.5
     for j, texto in enumerate(cabecera):
         celda = tabla.rows[0].cells[j]
         celda.paragraphs[0].text = ""
@@ -205,12 +213,31 @@ def agregar_tabla(doc: Document, filas: list[str]) -> None:
             texto_con_formato(parrafo, texto, tamano)
             if j > 0 and re.fullmatch(r"[\d.,%£ —-]+", texto):
                 parrafo.alignment = WD_ALIGN_PARAGRAPH.RIGHT
-    # Mantener la tabla en una sola página: cada fila "sigue" a la siguiente y ninguna fila se parte.
-    for fila in tabla.rows[:-1]:
-        for celda in fila.cells:
-            for parrafo in celda.paragraphs:
-                parrafo.paragraph_format.keep_with_next = True
-    for fila in tabla.rows:
+    if len(cuerpo) <= FILAS_MAX_TABLA_ENTERA:
+        # Mantener la tabla en una sola página: cada fila "sigue" a la siguiente.
+        for fila in tabla.rows[:-1]:
+            for celda in fila.cells:
+                for parrafo in celda.paragraphs:
+                    parrafo.paragraph_format.keep_with_next = True
+    else:
+        # Tabla larga: puede partirse entre páginas, repitiendo la cabecera (que no queda sola al pie de una página).
+        tabla.rows[0]._tr.get_or_add_trPr().append(OxmlElement("w:tblHeader"))
+        for celda in tabla.rows[0].cells:
+            celda.paragraphs[0].paragraph_format.keep_with_next = True
+        # Anchos: cada columna recibe al menos el de su palabra más larga y el resto se reparte según la longitud
+        # media de su texto, para no partir palabras ni alargar las filas de más.
+        cm_por_caracter = 0.019 * tamano
+        minimos = [cm_por_caracter * max(len(p) for f in celdas for p in f[j].split() or [""]) + 0.4
+                   for j in range(len(cabecera))]
+        medias = [min(sum(len(f[j]) for f in cuerpo) / len(cuerpo), 60) for j in range(len(cabecera))]
+        sobrante = max(ANCHO_MAX_CM - sum(minimos), 0)
+        tabla.autofit = False
+        for j, (minimo, media) in enumerate(zip(minimos, medias)):
+            ancho = Cm(minimo + sobrante * media / sum(medias))
+            tabla.columns[j].width = ancho   # rejilla de la tabla (la que respeta Word)
+            for fila in tabla.rows:
+                fila.cells[j].width = ancho
+    for fila in tabla.rows:  # ninguna fila se parte
         fila._tr.get_or_add_trPr().append(OxmlElement("w:cantSplit"))
     doc.add_paragraph()
 
@@ -258,6 +285,12 @@ def convertir(markdown: str, doc: Document) -> None:
             volcar_parrafo()
             agregar_imagen(doc, REPORTES / imagen.group(3))
             pie_numerado(doc, "Figura", int(imagen.group(1)), imagen.group(2))
+        elif re.fullmatch(r"\*\*\d+\. .+\*\*", sin_espacio):   # pregunta numerada en negrita: párrafo propio
+            volcar_parrafo()
+            p = doc.add_paragraph()
+            p.paragraph_format.space_before = Pt(8)
+            p.paragraph_format.keep_with_next = True
+            texto_con_formato(p, sin_espacio)
         elif re.fullmatch(r"\*Figura \d+\..+\*", sin_espacio):
             pass  # el pie ya se añadió junto a la imagen
         elif (rotulo := re.fullmatch(r"\*Tabla (\d+)\. (.+)\*", sin_espacio)):
@@ -302,8 +335,10 @@ def convertir(markdown: str, doc: Document) -> None:
     volcar_parrafo()
 
 
-def construir_docx(destino: Path) -> None:
+def construir_docx(nombre: str, destino: Path) -> None:
+    opciones = DOCUMENTOS[nombre]
     datos = json.loads((REPORTES / "portada.json").read_text(encoding="utf-8"))
+    datos["subtitulo"] = opciones["subtitulo"] or datos["subtitulo"]
     doc = Document()
     configurar_estilos(doc)
     seccion = doc.sections[0]
@@ -318,15 +353,15 @@ def construir_docx(destino: Path) -> None:
     cuerpo = doc.add_section(WD_SECTION.NEW_PAGE)   # portada sin número de página
     cuerpo.footer.is_linked_to_previous = False
     numeros_de_pagina(cuerpo)
-    indices(doc)
-    convertir((REPORTES / "INFORME.md").read_text(encoding="utf-8"), doc)
+    indices(doc, opciones["indice_figuras"])
+    convertir((REPORTES / f"{nombre}.md").read_text(encoding="utf-8"), doc)
     doc.save(destino)
 
 
-if __name__ == "__main__":
-    docx = REPORTES / "INFORME.docx"
-    pdf = REPORTES / "INFORME.pdf"
-    construir_docx(docx)
+def exportar(nombre: str) -> None:
+    docx = REPORTES / f"{nombre}.docx"
+    pdf = REPORTES / f"{nombre}.pdf"
+    construir_docx(nombre, docx)
     print(f"Generado {docx.relative_to(RAIZ)}")
     if sys.platform == "win32":
         resultado = subprocess.run(["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File",
@@ -337,3 +372,12 @@ if __name__ == "__main__":
         print(f"Generado {pdf.relative_to(RAIZ)} (índices actualizados por Word)")
     else:
         print("PDF: abre el .docx en Word, actualiza los índices (F9) y exporta a PDF.")
+
+
+if __name__ == "__main__":
+    pedidos = sys.argv[1:] or list(DOCUMENTOS)
+    desconocidos = [n for n in pedidos if n not in DOCUMENTOS]
+    if desconocidos:
+        sys.exit(f"Documento desconocido: {desconocidos}. Opciones: {list(DOCUMENTOS)}")
+    for nombre in pedidos:
+        exportar(nombre)
