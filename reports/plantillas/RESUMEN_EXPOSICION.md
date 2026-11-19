@@ -173,60 +173,67 @@ más profundidad solo memoriza.
 El árbol no prueba que los segmentos sean «verdaderos», sino que son reproducibles con reglas sencillas en clientes no
 vistos. Si fueran ruido, fallaría en prueba. La prueba más directa es la reasignación, que no usa otro modelo.
 
-**7. Las métricas dicen k = 2. ¿Por qué k = {k_final}?**
+**7. ¿Están balanceadas las clases? ¿No infla eso la exactitud?**
+Están balanceadas en número de clientes: el segmento mayor ({seg_mayor_nombre}, {seg_mayor_pct_clientes}) tiene solo
+{seg_ratio_mayor_menor} veces más clientes que el menor ({seg_menor_nombre}, {seg_menor_pct_clientes}), y la partición es
+estratificada. La exactitud balanceada del árbol es {val_exactitud_balanceada} y el F1 macro {val_f1_macro}, casi igual a su
+exactitud ({val_arbol_prueba}). El desbalance está en los ingresos ({s3_nombre} aporta el {s3_pct_ingresos}): es un
+hallazgo de negocio, no un problema del modelo.
+
+**8. Las métricas dicen k = 2. ¿Por qué k = {k_final}?**
 El silhouette baja con cada k porque los datos son una nube continua, y ahí siempre gana el k mínimo. k = 2 solo separa
 activos de inactivos; k = {k_final} es muy estable (peor caso {final_estabilidad_p10}) y da segmentos accionables.
 
-**8. ¿Por qué no k = 5?**
+**9. ¿Por qué no k = 5?**
 En el peor 10 % de submuestras su estabilidad cae a {k5_estabilidad_p10}: tiene dos soluciones casi empatadas y salta
 de una a otra.
 
-**9. Un silhouette de {final_silhouette} es bajo. ¿Es aceptable?**
+**10. Un silhouette de {final_silhouette} es bajo. ¿Es aceptable?**
 Sí. Mide la separación entre grupos, y los clientes forman un continuo (lo confirmaron DBSCAN y HDBSCAN). El objetivo es
 dividir ese continuo en segmentos útiles, y para eso importan la estabilidad, la robustez y la interpretabilidad, que
 son altas.
 
-**10. ¿Por qué esas cuatro variables y no el gasto total?**
+**11. ¿Por qué esas cuatro variables y no el gasto total?**
 El gasto es facturas × ticket: incluirlo contaría la misma información dos veces. Frecuencia y ticket juntos ya lo
 contienen y además separan dos comportamientos distintos.
 
-**11. ¿Por qué log1p, recorte p1–p99 y estandarización?**
+**12. ¿Por qué log1p, recorte p1–p99 y estandarización?**
 Las variables tienen colas muy largas: sin log1p unos pocos mayoristas definirían toda la geometría. El recorte evita que
 los extremos arrastren los centroides sin sacar a nadie, y la estandarización hace que todas pesen igual.
 
-**12. ¿Qué pasó con GMM?**
+**13. ¿Qué pasó con GMM?**
 Un tercio de los clientes tiene una sola factura, y GMM ponía una campana de varianza casi cero sobre ese empate. Se
 corrigió con `reg_covar` = {reg_covar}, pero quedó peor que K-Means (silhouette {gmm_silhouette}).
 
-**13. ¿Y DBSCAN?**
+**14. ¿Y DBSCAN?**
 Con `eps` = {eps} y `min_samples` = {min_samples} encuentra un solo grupo y {atipicos} atípicos: no hay grupos separados
 por densidad. Se usa para detectar atípicos, de donde salen las cuentas clave.
 
-**14. ¿Para qué PCA y t-SNE?**
+**15. ¿Para qué PCA y t-SNE?**
 PCA para interpretar y dibujar (dos ejes explican el {pca_2}). t-SNE solo para visualizar: no conserva distancias ni
 tamaños, así que no sirve para validar.
 
-**15. ¿Qué son las cuentas clave?**
+**16. ¿Qué son las cuentas clave?**
 {ck_clientes} clientes VIP atípicos para DBSCAN y con gasto alto: el {ck_pct_clientes} de los clientes y el
 {ck_pct_ingresos} de los ingresos. Merecen un gestor de cuenta dedicado.
 
-**16. ¿Qué aporta frente al RFM?**
+**17. ¿Qué aporta frente al RFM?**
 RFM no distingue a los dos grupos de ocasionales; K-Means los separa por el tamaño del pedido ({s0_pct_ingresos} frente
 a {s1_pct_ingresos} de los ingresos), lo que cambia cuánto invertir en reactivar a cada uno.
 
-**17. ¿Cómo clasifica la app a un cliente nuevo?**
+**18. ¿Cómo clasifica la app a un cliente nuevo?**
 No reentrena: carga el mismo preprocesador (con los límites del entrenamiento) y el mismo K-Means. Las pruebas
 comprueban que reproduce el segmento de los {clientes} clientes y las {ck_clientes} cuentas clave.
 
-**18. ¿Por qué quitaron las líneas sin cliente?**
+**19. ¿Por qué quitaron las líneas sin cliente?**
 Porque se segmentan clientes y esas líneas ({pct_lineas_sin_cliente}) no se pueden asignar a nadie. Está declarado como
 limitación.
 
-**19. ¿Cómo sabrían si las estrategias funcionan?**
+**20. ¿Cómo sabrían si las estrategias funcionan?**
 Cada estrategia tiene un KPI con su línea base actual. Se aplicaría a una parte del segmento, con otra como grupo de
 control, y se compararía el KPI.
 
-**20. ¿Cuáles son las limitaciones?**
+**21. ¿Cuáles son las limitaciones?**
 Un solo año de datos (no separa estacionalidad de crecimiento), clientes sin identificar excluidos, segmentación como
 foto fija que hay que recalcular, y estrategias aún sin probar.
 

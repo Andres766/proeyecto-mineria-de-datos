@@ -1,10 +1,15 @@
 {
   "titulo": "Segmentación avanzada de clientes con clustering y reducción de dimensionalidad",
   "subtitulo": "Informe final del proyecto",
-  "asignatura": "Inteligencia de Negocios y Minería de Datos",
-  "programa": "Ingeniería de Software",
+  "autores": [
+    "Julián Moreno",
+    "Andrés Cordoba",
+    "Ubeimar Yepes",
+    "Valery Rosero"
+  ],
+  "programa": "Programa de Ingeniería de Software",
   "universidad": "Universidad Cooperativa de Colombia",
-  "autor": "Andres Cordoba",
-  "docente": "",
+  "asignatura": "Inteligencia de Negocios y Minería de Datos",
+  "docente": "Ing. Cristian Ordoñez",
   "fecha": "Noviembre de 2026"
 }
