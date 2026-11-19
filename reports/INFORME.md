@@ -11,10 +11,13 @@ compras. Por cada cliente se construyeron variables de comportamiento (recency, 
 de productos), se transformaron con log1p, se recortaron a los percentiles 1–99 y se estandarizaron. Se compararon tres
 familias de algoritmos (K-Means, mezclas gaussianas y DBSCAN/HDBSCAN) y se usaron PCA y t-SNE para interpretar y
 visualizar. La validación combinó métricas internas, estabilidad por remuestreo, robustez a los empates de la variable
-frecuencia, concordancia con un baseline RFM por quintiles y un criterio de negocio.
+frecuencia, concordancia con un baseline RFM por quintiles, pruebas de exactitud con datos de entrenamiento y de prueba,
+y un criterio de negocio.
 
 El modelo final es **K-Means con k = 4** (silhouette 0,240, estabilidad mediana
-0,958). Da cuatro segmentos accionables: **VIP** (20,5 % de los clientes y
+0,958). Al clasificar clientes que no vio al entrenar, coincide con el segmento final en el
+98,2 % de los casos, y un árbol de decisión reproduce los segmentos con un 91,3 % de exactitud
+en prueba. Da cuatro segmentos accionables: **VIP** (20,5 % de los clientes y
 70,2 % de los ingresos), **En crecimiento**, **Grandes ocasionales** y **Pequeños ocasionales**. Dentro de VIP, el cruce con los
 atípicos de DBSCAN identifica un subgrupo de **cuentas clave**: 66 clientes (1,5 %) que
 generan el 32,3 % de los ingresos. Cada segmento tiene estrategias de marketing con acción, momento y KPI.
@@ -63,8 +66,8 @@ evaluación y despliegue.
 - **Organización del código:** la lógica está en un paquete (`src/segmentacion`: carga, limpieza, características,
   modelado, evaluación, perfilamiento y predicción) y los notebooks solo la invocan y narran los resultados.
 - **Reproducibilidad:** todos los procesos aleatorios usan `random_state = 42`, las dependencias tienen versiones fijas
-  y el proyecto incluye 100 pruebas automáticas (limpieza, características, modelado, clasificación de clientes
-  nuevos y la propia aplicación).
+  y el proyecto incluye 106 pruebas automáticas (limpieza, características, modelado, medidas de exactitud,
+  clasificación de clientes nuevos y la propia aplicación).
 
 Las decisiones se tomaron comparando alternativas con datos y no por convención. Las más relevantes:
 
@@ -349,7 +352,94 @@ segmentos con diez, pero la tabla cruzada (sección 8) muestra que encajan.
 
 *Figura 16. Concordancia entre modelos y con el baseline RFM (ARI)*
 
-### 7.3 Decisión
+### 7.3 Exactitud con datos de entrenamiento y de prueba
+
+En un problema supervisado la exactitud compara la predicción con una etiqueta real. La segmentación es no supervisada:
+no existe un «segmento verdadero» de cada cliente, así que la exactitud no se puede calcular sobre los clusters. Lo que sí
+se puede medir, separando datos de **entrenamiento** y de **prueba**, es si los segmentos se reproducen con clientes que
+el modelo no ha visto (notebook `05_validacion`). Se hicieron dos pruebas:
+
+1. **Exactitud de reasignación.** Con validación cruzada estratificada de 5 pliegues se reentrena el
+   proceso completo (log1p, límites de winsorizado, escalado y K-Means) sin los clientes de un pliegue y se les asigna
+   segmento. Tras alinear la numeración de los clusters con el algoritmo húngaro (Kuhn, 1955), coinciden con el modelo
+   final en el **98,2 %** de los casos (entre 96,8 % y 99,3 % según el
+   pliegue). Es la operación que hace el aplicativo con un cliente nuevo, y es la idea de la validación por predicción
+   de Lange et al. (2004).
+2. **Clasificadores supervisados.** Con los segmentos como etiqueta, los clientes se dividieron en 80 %
+   para entrenamiento (3.459) y 20 % para prueba (865), de forma estratificada.
+   Los hiperparámetros se eligieron solo con validación cruzada dentro del entrenamiento (Kohavi, 1995), y el conjunto
+   de prueba se usó una única vez al final.
+
+*Tabla 3. Exactitud de los clasificadores que aprenden los segmentos (validación cruzada de 5 pliegues en el entrenamiento y conjunto de prueba de 865 clientes).*
+
+| Clasificador | Exactitud en validación cruzada | Exactitud en prueba |
+|---|---|---|
+| Árbol de decisión (profundidad 3) | 79,4 % ± 1,8 % | 82,0 % |
+| Árbol de decisión ajustado | 91,6 % ± 1,5 % | 91,3 % |
+| Bosque aleatorio (300 árboles) | 95,3 % ± 0,5 % | 94,7 % |
+
+El árbol de decisión (Breiman et al., 1984) se ajustó con una búsqueda en rejilla de 36
+combinaciones de profundidad máxima y mínimo de clientes por hoja. La mejor es profundidad 10 con
+mínimo 1 por hoja. La curva de la figura muestra el compromiso entre sencillez y exactitud: con
+profundidad 3 el árbol acierta el 79,4 % en validación cruzada y con 5 el 87,7 %. A partir de
+ahí la exactitud de validación se estanca, mientras la de entrenamiento sigue subiendo hasta el
+100,0 %: más profundidad solo sobreajusta. El bosque aleatorio (Breiman, 2001) llega al
+94,7 % en prueba. En todos los casos la exactitud en prueba es parecida a la de validación cruzada, señal de
+que la estimación es fiable.
+
+![Figura 17. Exactitud del árbol de decisión según su profundidad](figures/05_exactitud_profundidad.png)
+
+*Figura 17. Exactitud del árbol de decisión según su profundidad*
+
+*Tabla 4. Precisión, sensibilidad y F1 del árbol ajustado por segmento (conjunto de prueba).*
+
+| Segmento | Precisión | Sensibilidad | F1 | Clientes en prueba |
+|---|---|---|---|---|
+| Pequeños ocasionales | 93,8 % | 94,2 % | 94,0 % | 208 |
+| Grandes ocasionales | 94,9 % | 91,8 % | 93,4 % | 245 |
+| En crecimiento | 86,2 % | 88,5 % | 87,3 % | 234 |
+| VIP | 90,5 % | 91,0 % | 90,8 % | 178 |
+
+Los errores se concentran en **En crecimiento** (precisión 86,2 %, sensibilidad 88,5 %),
+el segmento intermedio que limita con los otros tres. Ningún VIP se confunde con un pequeño ocasional ni al revés: los
+errores son siempre entre segmentos vecinos.
+
+![Figura 18. Matriz de confusión del árbol ajustado en el conjunto de prueba](figures/05_matriz_confusion.png)
+
+*Figura 18. Matriz de confusión del árbol ajustado en el conjunto de prueba*
+
+Un árbol de solo profundidad 3 acierta el 82,0 % en prueba con reglas que se leen en unidades de negocio:
+
+- Número de facturas ≤ 4,5 y Ticket promedio (£) ≤ 264,8 y Productos distintos ≤ 23,5 → **Pequeños ocasionales**
+- Número de facturas ≤ 4,5 y Ticket promedio (£) ≤ 264,8 y Productos distintos > 23,5 → **En crecimiento**
+- Número de facturas ≤ 4,5 y Ticket promedio (£) > 264,8 y Días desde la última compra ≤ 37,5 → **En crecimiento**
+- Número de facturas ≤ 4,5 y Ticket promedio (£) > 264,8 y Días desde la última compra > 37,5 → **Grandes ocasionales**
+- Número de facturas > 4,5 y Productos distintos ≤ 79,5 y Número de facturas ≤ 6,5 → **En crecimiento**
+- Número de facturas > 4,5 y Productos distintos ≤ 79,5 y Número de facturas > 6,5 → **VIP**
+- Número de facturas > 4,5 y Productos distintos > 79,5 y Días desde la última compra ≤ 73,5 → **VIP**
+- Número de facturas > 4,5 y Productos distintos > 79,5 y Días desde la última compra > 73,5 → **VIP**
+
+### 7.4 Ajustes de hiperparámetros
+
+*Tabla 5. Hiperparámetros y decisiones de modelado probados, valor elegido y criterio.*
+
+| Etapa | Parámetro | Valores probados | Elegido | Criterio |
+|---|---|---|---|---|
+| Preprocesado | Transformación | sin transformar / log1p | log1p | Las cuatro variables son muy asimétricas; con log1p quedan casi simétricas (comparación de asimetría, notebook 02) |
+| Preprocesado | Escalado | StandardScaler / RobustScaler | StandardScaler | Todas las variables pesan igual en la distancia; RobustScaler daba más peso al ticket sin razón de negocio |
+| Preprocesado | Valores extremos | mantener / winsorizar | winsorizar p1–p99 (en log1p) | Los extremos ya no arrastran los centroides de K-Means |
+| Preprocesado | Variables del clustering | 4 variables + gasto total (VIF) + tasa de devoluciones | recency, frequency, ticket_promedio, productos_distintos | Gasto = facturas × ticket (redundante, VIF); la tasa de devoluciones creaba un cluster solo de devolvedores |
+| K-Means | Número de clusters k | 2 a 10 | 4 | k = 2 gana en métricas pero no es accionable; k = 4 es estable y k = 5 es inestable |
+| K-Means | Inicializaciones (n_init) | — | 10 (k-means++) | Se queda con la mejor de 10 inicializaciones |
+| GMM | Tipo de covarianza × k | diag, full, spherical, tied × k 2 a 10 | full, k = 7 | Menor BIC |
+| GMM | reg_covar | 1e-6 a 0,1 (10 valores) | 0,05 | Mínimo valor sin componentes degenerados por los empates de frecuencia = 1 |
+| DBSCAN | eps | codo de las distancias al 8.º vecino | 0,717 | Punto de máxima curvatura del gráfico de k-distancias |
+| DBSCAN | min_samples | regla 2 × nº de variables | 8 | Regla habitual de la literatura |
+| HDBSCAN | min_cluster_size | 2 % de los clientes | 86 | Tamaño mínimo de un segmento útil |
+| t-SNE | perplexity | 5, 30, 50, 100 | 30 | Equilibrio entre estructura local y global (solo para visualizar) |
+| Árbol de decisión | max_depth × min_samples_leaf | 9 × 4 = 36 combinaciones | 10 y 1 | Mayor exactitud en validación cruzada de 5 pliegues |
+
+### 7.5 Decisión
 
 Se eligió **K-Means con k = 4**:
 
@@ -357,6 +447,8 @@ Se eligió **K-Means con k = 4**:
   1.926.
 - **Estabilidad:** mediana 0,958 y percentil 10 0,929.
 - **Robustez a los empates:** ARI 0,941.
+- **Exactitud con clientes no vistos:** 98,2 % de reasignación; un árbol de decisión reproduce los
+  segmentos con un 91,3 % de exactitud en prueba.
 - **Negocio:** segmentos accionables de tamaño útil.
 
 Las métricas y el negocio no coinciden: las métricas premian k = 2. Es lo esperable en una nube continua, donde el
@@ -371,7 +463,7 @@ sea estable, robusta e interpretable, y lo es.
 
 ## 8. Resultados: perfiles de los segmentos
 
-*Tabla 3. Perfil de los segmentos (medianas).*
+*Tabla 6. Perfil de los segmentos (medianas).*
 
 | Segmento | Clientes | % clientes | % ingresos | Recency (días) | Facturas | Ticket mediano | Productos | Gasto mediano |
 |---|---|---|---|---|---|---|---|---|
@@ -392,38 +484,38 @@ sea estable, robusta e interpretable, y lo es.
 - **Pequeños ocasionales:** pedidos pequeños (ticket de 139,34 £, 9 productos) y de vez en cuando. Aportan el
   2,7 % de los ingresos.
 
-![Figura 17. Snake plot: media estandarizada de las variables por segmento](figures/04_snake_plot.png)
+![Figura 19. Snake plot: media estandarizada de las variables por segmento](figures/04_snake_plot.png)
 
-*Figura 17. Snake plot: media estandarizada de las variables por segmento*
+*Figura 19. Snake plot: media estandarizada de las variables por segmento*
 
-![Figura 18. Radar: percentil medio de cada segmento](figures/04_radar.png)
+![Figura 20. Radar: percentil medio de cada segmento](figures/04_radar.png)
 
-*Figura 18. Radar: percentil medio de cada segmento*
+*Figura 20. Radar: percentil medio de cada segmento*
 
 **Valor añadido frente al baseline RFM.** Para RFM, Pequeños ocasionales y Grandes ocasionales son casi lo mismo: el 88 % y el
 90 % son clientes hibernando o en riesgo. K-Means los separa por el tamaño del pedido y su valor es muy
 distinto: el 2,7 % frente al 15,8 % de los ingresos. Por eso merecen inversiones de reactivación
 distintas.
 
-![Figura 19. Composición de cada segmento según el baseline RFM](figures/04_contingencia_rfm.png)
+![Figura 21. Composición de cada segmento según el baseline RFM](figures/04_contingencia_rfm.png)
 
-*Figura 19. Composición de cada segmento según el baseline RFM*
+*Figura 21. Composición de cada segmento según el baseline RFM*
 
 **Cuentas clave.** Los atípicos de DBSCAN se concentran en VIP. El subgrupo de cuentas clave reúne a los VIP atípicos
 que gastan al menos la mediana del resto de VIP (2.936,20 £). Son 66 clientes (1,5 %) que
 generan el 32,3 % de los ingresos: compran 26 veces de mediana, con un ticket de 1.078,19 £.
 
-![Figura 20. Segmentos en el plano PCA y cuentas clave (rombos)](figures/04_cuentas_clave_pca.png)
+![Figura 22. Segmentos en el plano PCA y cuentas clave (rombos)](figures/04_cuentas_clave_pca.png)
 
-*Figura 20. Segmentos en el plano PCA y cuentas clave (rombos)*
+*Figura 22. Segmentos en el plano PCA y cuentas clave (rombos)*
 
 **Estacionalidad.** El 45,9 % de las facturas de En crecimiento son de septiembre–noviembre (el más
 estacional), y el 25,5 % del segmento hizo su primera compra desde octubre de 2011. El mes de compra no
 es independiente de la recency, así que estas cifras se interpretan con cautela.
 
-![Figura 21. Estacionalidad de cada segmento](figures/04_estacionalidad.png)
+![Figura 23. Estacionalidad de cada segmento](figures/04_estacionalidad.png)
 
-*Figura 21. Estacionalidad de cada segmento*
+*Figura 23. Estacionalidad de cada segmento*
 
 ## 9. Estrategias de marketing
 
@@ -465,7 +557,8 @@ El aplicativo, desarrollado en Streamlit y Plotly, tiene seis páginas:
 
 1. **Inicio:** objetivo, indicadores clave y hallazgos principales.
 2. **Exploración:** limpieza y patrones de venta.
-3. **Modelos y validación:** comparación de los algoritmos y justificación del modelo final.
+3. **Modelos y validación:** comparación de los algoritmos, justificación del modelo final, exactitud con datos de
+   prueba, reglas del árbol de decisión y tabla de ajustes.
 4. **Clusters:** PCA 2D y 3D y t-SNE, con selector de algoritmo y la advertencia sobre t-SNE.
 5. **Perfiles y estrategias.**
 6. **Explorador:** filtros, búsqueda por cliente, descarga en CSV y clasificación de un cliente nuevo.
@@ -475,13 +568,13 @@ y se reproduce la regla de cuenta clave. El atípico se decide por cercanía a l
 comprueban que el formulario reproduce el segmento de los 4.324 clientes. La aplicación se probó en un entorno con
 solo las dependencias de despliegue y en un contenedor Docker.
 
-![Figura 22. Página de inicio del aplicativo](figures/app_inicio.png)
+![Figura 24. Página de inicio del aplicativo](figures/app_inicio.png)
 
-*Figura 22. Página de inicio del aplicativo*
+*Figura 24. Página de inicio del aplicativo*
 
-![Figura 23. Clasificación de un cliente nuevo sobre el mapa PCA](figures/app_explorador.png)
+![Figura 25. Clasificación de un cliente nuevo sobre el mapa PCA](figures/app_explorador.png)
 
-*Figura 23. Clasificación de un cliente nuevo sobre el mapa PCA*
+*Figura 25. Clasificación de un cliente nuevo sobre el mapa PCA*
 
 ## 11. Conclusiones
 
@@ -496,6 +589,9 @@ solo las dependencias de despliegue y en un contenedor Docker.
    sale el subgrupo de cuentas clave (1,5 % de los clientes y 32,3 % de los ingresos).
 5. Frente al baseline RFM, el clustering distingue a los ocasionales de pedido grande de los de pedido pequeño, una
    diferencia con impacto directo en cómo invertir en reactivación.
+6. Aunque el silhouette es moderado, los segmentos son reproducibles: con clientes que el modelo no vio, la
+   reasignación coincide en el 98,2 % de los casos y un árbol de decisión los reconoce con un
+   91,3 % de exactitud, con reglas sencillas que se pueden explicar a negocio.
 
 ## 12. Limitaciones y trabajo futuro
 
@@ -512,6 +608,8 @@ solo las dependencias de despliegue y en un contenedor Docker.
 
 - Arthur, D. y Vassilvitskii, S. (2007). k-means++: The advantages of careful seeding. *Proceedings of the 18th Annual
   ACM-SIAM Symposium on Discrete Algorithms*, 1027–1035.
+- Breiman, L. (2001). Random forests. *Machine Learning*, 45(1), 5–32.
+- Breiman, L., Friedman, J. H., Olshen, R. A. y Stone, C. J. (1984). *Classification and Regression Trees*. Wadsworth.
 - Caliński, T. y Harabasz, J. (1974). A dendrite method for cluster analysis. *Communications in Statistics*, 3(1), 1–27.
 - Campello, R. J. G. B., Moulavi, D. y Sander, J. (2013). Density-based clustering based on hierarchical density
   estimates. *Advances in Knowledge Discovery and Data Mining (PAKDD)*, 160–172.
@@ -525,10 +623,16 @@ solo las dependencias de despliegue y en un contenedor Docker.
   Mining (KDD)*, 226–231.
 - Hennig, C. (2007). Cluster-wise assessment of cluster stability. *Computational Statistics & Data Analysis*, 52(1),
   258–271.
-- Kaufman, L. y Rousseeuw, P. J. (1990). *Finding Groups in Data: An Introduction to Cluster Analysis*. John Wiley &
-  Sons.
 - Hubert, L. y Arabie, P. (1985). Comparing partitions. *Journal of Classification*, 2(1), 193–218.
 - Hughes, A. M. (1994). *Strategic Database Marketing*. Probus Publishing.
+- Kaufman, L. y Rousseeuw, P. J. (1990). *Finding Groups in Data: An Introduction to Cluster Analysis*. John Wiley &
+  Sons.
+- Kohavi, R. (1995). A study of cross-validation and bootstrap for accuracy estimation and model selection.
+  *Proceedings of the 14th International Joint Conference on Artificial Intelligence (IJCAI)*, 2, 1137–1143.
+- Kuhn, H. W. (1955). The Hungarian method for the assignment problem. *Naval Research Logistics Quarterly*, 2(1–2),
+  83–97.
+- Lange, T., Roth, V., Braun, M. L. y Buhmann, J. M. (2004). Stability-based validation of clustering solutions.
+  *Neural Computation*, 16(6), 1299–1323.
 - MacQueen, J. (1967). Some methods for classification and analysis of multivariate observations. *Proceedings of the
   Fifth Berkeley Symposium on Mathematical Statistics and Probability*, 1, 281–297.
 - Pedregosa, F. et al. (2011). Scikit-learn: Machine learning in Python. *Journal of Machine Learning Research*, 12,
@@ -538,8 +642,8 @@ solo las dependencias de despliegue y en un contenedor Docker.
 - Schubert, E., Sander, J., Ester, M., Kriegel, H.-P. y Xu, X. (2017). DBSCAN revisited, revisited: Why and how you
   should (still) use DBSCAN. *ACM Transactions on Database Systems*, 42(3), 1–21.
 - Schwarz, G. (1978). Estimating the dimension of a model. *The Annals of Statistics*, 6(2), 461–464.
+- UCI Machine Learning Repository. Online Retail [Dataset]. https://archive.ics.uci.edu/dataset/352/online+retail
 - van der Maaten, L. y Hinton, G. (2008). Visualizing data using t-SNE. *Journal of Machine Learning Research*, 9,
   2579–2605.
 - Wattenberg, M., Viégas, F. y Johnson, I. (2016). How to use t-SNE effectively. *Distill*.
   https://doi.org/10.23915/distill.00002
-- UCI Machine Learning Repository. Online Retail [Dataset]. https://archive.ics.uci.edu/dataset/352/online+retail

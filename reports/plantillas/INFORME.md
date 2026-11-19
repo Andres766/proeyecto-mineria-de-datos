@@ -11,10 +11,13 @@ compras. Por cada cliente se construyeron variables de comportamiento (recency, 
 de productos), se transformaron con log1p, se recortaron a los percentiles 1–99 y se estandarizaron. Se compararon tres
 familias de algoritmos (K-Means, mezclas gaussianas y DBSCAN/HDBSCAN) y se usaron PCA y t-SNE para interpretar y
 visualizar. La validación combinó métricas internas, estabilidad por remuestreo, robustez a los empates de la variable
-frecuencia, concordancia con un baseline RFM por quintiles y un criterio de negocio.
+frecuencia, concordancia con un baseline RFM por quintiles, pruebas de exactitud con datos de entrenamiento y de prueba,
+y un criterio de negocio.
 
 El modelo final es **K-Means con k = {k_final}** (silhouette {final_silhouette}, estabilidad mediana
-{final_estabilidad_mediana}). Da cuatro segmentos accionables: **{s3_nombre}** ({s3_pct_clientes} de los clientes y
+{final_estabilidad_mediana}). Al clasificar clientes que no vio al entrenar, coincide con el segmento final en el
+{val_reasignacion} de los casos, y un árbol de decisión reproduce los segmentos con un {val_arbol_prueba} de exactitud
+en prueba. Da cuatro segmentos accionables: **{s3_nombre}** ({s3_pct_clientes} de los clientes y
 {s3_pct_ingresos} de los ingresos), **{s2_nombre}**, **{s1_nombre}** y **{s0_nombre}**. Dentro de VIP, el cruce con los
 atípicos de DBSCAN identifica un subgrupo de **{ck_nombre_subgrupo}**: {ck_clientes} clientes ({ck_pct_clientes}) que
 generan el {ck_pct_ingresos} de los ingresos. Cada segmento tiene estrategias de marketing con acción, momento y KPI.
@@ -63,8 +66,8 @@ evaluación y despliegue.
 - **Organización del código:** la lógica está en un paquete (`src/segmentacion`: carga, limpieza, características,
   modelado, evaluación, perfilamiento y predicción) y los notebooks solo la invocan y narran los resultados.
 - **Reproducibilidad:** todos los procesos aleatorios usan `random_state = 42`, las dependencias tienen versiones fijas
-  y el proyecto incluye {n_pruebas} pruebas automáticas (limpieza, características, modelado, clasificación de clientes
-  nuevos y la propia aplicación).
+  y el proyecto incluye {n_pruebas} pruebas automáticas (limpieza, características, modelado, medidas de exactitud,
+  clasificación de clientes nuevos y la propia aplicación).
 
 Las decisiones se tomaron comparando alternativas con datos y no por convención. Las más relevantes:
 
@@ -301,7 +304,60 @@ segmentos con diez, pero la tabla cruzada (sección 8) muestra que encajan.
 
 ![Concordancia entre modelos y con el baseline RFM (ARI)](figures/03_matriz_ari.png)
 
-### 7.3 Decisión
+### 7.3 Exactitud con datos de entrenamiento y de prueba
+
+En un problema supervisado la exactitud compara la predicción con una etiqueta real. La segmentación es no supervisada:
+no existe un «segmento verdadero» de cada cliente, así que la exactitud no se puede calcular sobre los clusters. Lo que sí
+se puede medir, separando datos de **entrenamiento** y de **prueba**, es si los segmentos se reproducen con clientes que
+el modelo no ha visto (notebook `05_validacion`). Se hicieron dos pruebas:
+
+1. **Exactitud de reasignación.** Con validación cruzada estratificada de {val_n_pliegues} pliegues se reentrena el
+   proceso completo (log1p, límites de winsorizado, escalado y K-Means) sin los clientes de un pliegue y se les asigna
+   segmento. Tras alinear la numeración de los clusters con el algoritmo húngaro (Kuhn, 1955), coinciden con el modelo
+   final en el **{val_reasignacion}** de los casos (entre {val_reasignacion_min} y {val_reasignacion_max} según el
+   pliegue). Es la operación que hace el aplicativo con un cliente nuevo, y es la idea de la validación por predicción
+   de Lange et al. (2004).
+2. **Clasificadores supervisados.** Con los segmentos como etiqueta, los clientes se dividieron en {val_pct_entrenamiento}
+   para entrenamiento ({val_n_entrenamiento}) y {val_pct_prueba} para prueba ({val_n_prueba}), de forma estratificada.
+   Los hiperparámetros se eligieron solo con validación cruzada dentro del entrenamiento (Kohavi, 1995), y el conjunto
+   de prueba se usó una única vez al final.
+
+Tabla: Exactitud de los clasificadores que aprenden los segmentos (validación cruzada de 5 pliegues en el entrenamiento y conjunto de prueba de {val_n_prueba} clientes).
+
+{tabla_clasificadores}
+
+El árbol de decisión (Breiman et al., 1984) se ajustó con una búsqueda en rejilla de {val_n_combinaciones}
+combinaciones de profundidad máxima y mínimo de clientes por hoja. La mejor es profundidad {val_arbol_profundidad} con
+mínimo {val_arbol_min_hoja} por hoja. La curva de la figura muestra el compromiso entre sencillez y exactitud: con
+profundidad 3 el árbol acierta el {val_arbol_cv_prof3} en validación cruzada y con 5 el {val_arbol_cv_prof5}. A partir de
+ahí la exactitud de validación se estanca, mientras la de entrenamiento sigue subiendo hasta el
+{val_arbol_entrenamiento_max}: más profundidad solo sobreajusta. El bosque aleatorio (Breiman, 2001) llega al
+{val_bosque_prueba} en prueba. En todos los casos la exactitud en prueba es parecida a la de validación cruzada, señal de
+que la estimación es fiable.
+
+![Exactitud del árbol de decisión según su profundidad](figures/05_exactitud_profundidad.png)
+
+Tabla: Precisión, sensibilidad y F1 del árbol ajustado por segmento (conjunto de prueba).
+
+{tabla_reporte_segmentos}
+
+Los errores se concentran en **{val_peor_segmento}** (precisión {val_peor_precision}, sensibilidad {val_peor_recall}),
+el segmento intermedio que limita con los otros tres. Ningún VIP se confunde con un pequeño ocasional ni al revés: los
+errores son siempre entre segmentos vecinos.
+
+![Matriz de confusión del árbol ajustado en el conjunto de prueba](figures/05_matriz_confusion.png)
+
+Un árbol de solo profundidad 3 acierta el {val_arbol3_prueba} en prueba con reglas que se leen en unidades de negocio:
+
+{reglas_arbol3}
+
+### 7.4 Ajustes de hiperparámetros
+
+Tabla: Hiperparámetros y decisiones de modelado probados, valor elegido y criterio.
+
+{tabla_ajustes}
+
+### 7.5 Decisión
 
 Se eligió **K-Means con k = {k_final}**:
 
@@ -309,6 +365,8 @@ Se eligió **K-Means con k = {k_final}**:
   {final_calinski_harabasz}.
 - **Estabilidad:** mediana {final_estabilidad_mediana} y percentil 10 {final_estabilidad_p10}.
 - **Robustez a los empates:** ARI {final_ari_descuantizado}.
+- **Exactitud con clientes no vistos:** {val_reasignacion} de reasignación; un árbol de decisión reproduce los
+  segmentos con un {val_arbol_prueba} de exactitud en prueba.
 - **Negocio:** segmentos accionables de tamaño útil.
 
 Las métricas y el negocio no coinciden: las métricas premian k = 2. Es lo esperable en una nube continua, donde el
@@ -374,7 +432,8 @@ El aplicativo, desarrollado en Streamlit y Plotly, tiene seis páginas:
 
 1. **Inicio:** objetivo, indicadores clave y hallazgos principales.
 2. **Exploración:** limpieza y patrones de venta.
-3. **Modelos y validación:** comparación de los algoritmos y justificación del modelo final.
+3. **Modelos y validación:** comparación de los algoritmos, justificación del modelo final, exactitud con datos de
+   prueba, reglas del árbol de decisión y tabla de ajustes.
 4. **Clusters:** PCA 2D y 3D y t-SNE, con selector de algoritmo y la advertencia sobre t-SNE.
 5. **Perfiles y estrategias.**
 6. **Explorador:** filtros, búsqueda por cliente, descarga en CSV y clasificación de un cliente nuevo.
@@ -401,6 +460,9 @@ solo las dependencias de despliegue y en un contenedor Docker.
    sale el subgrupo de cuentas clave ({ck_pct_clientes} de los clientes y {ck_pct_ingresos} de los ingresos).
 5. Frente al baseline RFM, el clustering distingue a los ocasionales de pedido grande de los de pedido pequeño, una
    diferencia con impacto directo en cómo invertir en reactivación.
+6. Aunque el silhouette es moderado, los segmentos son reproducibles: con clientes que el modelo no vio, la
+   reasignación coincide en el {val_reasignacion} de los casos y un árbol de decisión los reconoce con un
+   {val_arbol_prueba} de exactitud, con reglas sencillas que se pueden explicar a negocio.
 
 ## 12. Limitaciones y trabajo futuro
 
@@ -417,6 +479,8 @@ solo las dependencias de despliegue y en un contenedor Docker.
 
 - Arthur, D. y Vassilvitskii, S. (2007). k-means++: The advantages of careful seeding. *Proceedings of the 18th Annual
   ACM-SIAM Symposium on Discrete Algorithms*, 1027–1035.
+- Breiman, L. (2001). Random forests. *Machine Learning*, 45(1), 5–32.
+- Breiman, L., Friedman, J. H., Olshen, R. A. y Stone, C. J. (1984). *Classification and Regression Trees*. Wadsworth.
 - Caliński, T. y Harabasz, J. (1974). A dendrite method for cluster analysis. *Communications in Statistics*, 3(1), 1–27.
 - Campello, R. J. G. B., Moulavi, D. y Sander, J. (2013). Density-based clustering based on hierarchical density
   estimates. *Advances in Knowledge Discovery and Data Mining (PAKDD)*, 160–172.
@@ -430,10 +494,16 @@ solo las dependencias de despliegue y en un contenedor Docker.
   Mining (KDD)*, 226–231.
 - Hennig, C. (2007). Cluster-wise assessment of cluster stability. *Computational Statistics & Data Analysis*, 52(1),
   258–271.
-- Kaufman, L. y Rousseeuw, P. J. (1990). *Finding Groups in Data: An Introduction to Cluster Analysis*. John Wiley &
-  Sons.
 - Hubert, L. y Arabie, P. (1985). Comparing partitions. *Journal of Classification*, 2(1), 193–218.
 - Hughes, A. M. (1994). *Strategic Database Marketing*. Probus Publishing.
+- Kaufman, L. y Rousseeuw, P. J. (1990). *Finding Groups in Data: An Introduction to Cluster Analysis*. John Wiley &
+  Sons.
+- Kohavi, R. (1995). A study of cross-validation and bootstrap for accuracy estimation and model selection.
+  *Proceedings of the 14th International Joint Conference on Artificial Intelligence (IJCAI)*, 2, 1137–1143.
+- Kuhn, H. W. (1955). The Hungarian method for the assignment problem. *Naval Research Logistics Quarterly*, 2(1–2),
+  83–97.
+- Lange, T., Roth, V., Braun, M. L. y Buhmann, J. M. (2004). Stability-based validation of clustering solutions.
+  *Neural Computation*, 16(6), 1299–1323.
 - MacQueen, J. (1967). Some methods for classification and analysis of multivariate observations. *Proceedings of the
   Fifth Berkeley Symposium on Mathematical Statistics and Probability*, 1, 281–297.
 - Pedregosa, F. et al. (2011). Scikit-learn: Machine learning in Python. *Journal of Machine Learning Research*, 12,
@@ -443,8 +513,8 @@ solo las dependencias de despliegue y en un contenedor Docker.
 - Schubert, E., Sander, J., Ester, M., Kriegel, H.-P. y Xu, X. (2017). DBSCAN revisited, revisited: Why and how you
   should (still) use DBSCAN. *ACM Transactions on Database Systems*, 42(3), 1–21.
 - Schwarz, G. (1978). Estimating the dimension of a model. *The Annals of Statistics*, 6(2), 461–464.
+- UCI Machine Learning Repository. Online Retail [Dataset]. https://archive.ics.uci.edu/dataset/352/online+retail
 - van der Maaten, L. y Hinton, G. (2008). Visualizing data using t-SNE. *Journal of Machine Learning Research*, 9,
   2579–2605.
 - Wattenberg, M., Viégas, F. y Johnson, I. (2016). How to use t-SNE effectively. *Distill*.
   https://doi.org/10.23915/distill.00002
-- UCI Machine Learning Repository. Online Retail [Dataset]. https://archive.ics.uci.edu/dataset/352/online+retail
