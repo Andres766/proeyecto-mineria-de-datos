@@ -1,0 +1,302 @@
+{
+  "reasignacion": {
+    "n_pliegues": 5,
+    "pliegues": [
+      {
+        "pliegue": 1,
+        "n_entrenamiento": 3459,
+        "n_prueba": 865,
+        "exactitud": 0.9861271676300578
+      },
+      {
+        "pliegue": 2,
+        "n_entrenamiento": 3459,
+        "n_prueba": 865,
+        "exactitud": 0.9734104046242774
+      },
+      {
+        "pliegue": 3,
+        "n_entrenamiento": 3459,
+        "n_prueba": 865,
+        "exactitud": 0.9884393063583815
+      },
+      {
+        "pliegue": 4,
+        "n_entrenamiento": 3459,
+        "n_prueba": 865,
+        "exactitud": 0.9930635838150289
+      },
+      {
+        "pliegue": 5,
+        "n_entrenamiento": 3460,
+        "n_prueba": 864,
+        "exactitud": 0.9675925925925926
+      }
+    ],
+    "media": 0.9817266110040677,
+    "minimo": 0.9675925925925926,
+    "maximo": 0.9930635838150289
+  },
+  "clasificadores": {
+    "proporcion_prueba": 0.2,
+    "n_entrenamiento": 3459,
+    "n_prueba": 865,
+    "n_pliegues_cv": 5,
+    "rejilla": {
+      "max_depth": [
+        2,
+        3,
+        4,
+        5,
+        6,
+        8,
+        10,
+        12,
+        "sin límite"
+      ],
+      "min_samples_leaf": [
+        1,
+        5,
+        10,
+        20
+      ]
+    },
+    "n_combinaciones": 36,
+    "mejores_parametros": {
+      "max_depth": 10,
+      "min_samples_leaf": 1
+    },
+    "comparativa": [
+      {
+        "modelo": "Árbol de decisión (profundidad 3)",
+        "exactitud_cv": 0.7941514768744301,
+        "exactitud_cv_std": 0.018013957076445326,
+        "exactitud_prueba": 0.8196531791907514
+      },
+      {
+        "modelo": "Árbol de decisión ajustado",
+        "exactitud_cv": 0.9158696034063057,
+        "exactitud_cv_std": 0.014929667704327703,
+        "exactitud_prueba": 0.9132947976878613
+      },
+      {
+        "modelo": "Bosque aleatorio (300 árboles)",
+        "exactitud_cv": 0.9525869352450582,
+        "exactitud_cv_std": 0.005286727865920115,
+        "exactitud_prueba": 0.9468208092485549
+      }
+    ],
+    "curva_profundidad": [
+      {
+        "profundidad": "2",
+        "exactitud_entrenamiento": 0.6654389000419896,
+        "exactitud_cv": 0.6571208686414094,
+        "min_hoja": 20
+      },
+      {
+        "profundidad": "3",
+        "exactitud_entrenamiento": 0.808977137652473,
+        "exactitud_cv": 0.7941514768744301,
+        "min_hoja": 20
+      },
+      {
+        "profundidad": "4",
+        "exactitud_entrenamiento": 0.8619548675450343,
+        "exactitud_cv": 0.8383845143588499,
+        "min_hoja": 5
+      },
+      {
+        "profundidad": "5",
+        "exactitud_entrenamiento": 0.9103788247533379,
+        "exactitud_cv": 0.8774160762236182,
+        "min_hoja": 5
+      },
+      {
+        "profundidad": "6",
+        "exactitud_entrenamiento": 0.9318451516740446,
+        "exactitud_cv": 0.8869578310733376,
+        "min_hoja": 5
+      },
+      {
+        "profundidad": "8",
+        "exactitud_entrenamiento": 0.977161545757075,
+        "exactitud_cv": 0.9097977296872255,
+        "min_hoja": 1
+      },
+      {
+        "profundidad": "10",
+        "exactitud_entrenamiento": 0.9966755433045534,
+        "exactitud_cv": 0.9158696034063057,
+        "min_hoja": 1
+      },
+      {
+        "profundidad": "12",
+        "exactitud_entrenamiento": 0.9996387022108207,
+        "exactitud_cv": 0.915000041825954,
+        "min_hoja": 1
+      },
+      {
+        "profundidad": "sin límite",
+        "exactitud_entrenamiento": 1.0,
+        "exactitud_cv": 0.9155801678057267,
+        "min_hoja": 1
+      }
+    ],
+    "matriz_confusion": [
+      [
+        196,
+        2,
+        10,
+        0
+      ],
+      [
+        8,
+        225,
+        8,
+        4
+      ],
+      [
+        5,
+        9,
+        207,
+        13
+      ],
+      [
+        0,
+        1,
+        15,
+        162
+      ]
+    ],
+    "nombres": [
+      "Pequeños ocasionales",
+      "Grandes ocasionales",
+      "En crecimiento",
+      "VIP"
+    ],
+    "reporte": [
+      {
+        "segmento": "Pequeños ocasionales",
+        "precision": 0.937799043062201,
+        "recall": 0.9423076923076923,
+        "f1": 0.9400479616306955,
+        "soporte": 208
+      },
+      {
+        "segmento": "Grandes ocasionales",
+        "precision": 0.9493670886075949,
+        "recall": 0.9183673469387755,
+        "f1": 0.9336099585062241,
+        "soporte": 245
+      },
+      {
+        "segmento": "En crecimiento",
+        "precision": 0.8625,
+        "recall": 0.8846153846153846,
+        "f1": 0.8734177215189873,
+        "soporte": 234
+      },
+      {
+        "segmento": "VIP",
+        "precision": 0.9050279329608939,
+        "recall": 0.9101123595505618,
+        "f1": 0.907563025210084,
+        "soporte": 178
+      }
+    ],
+    "reglas_profundidad_3": "|--- Número de facturas <= 4.5\n|   |--- Ticket promedio (£) <= 264.8\n|   |   |--- Productos distintos <= 23.5\n|   |   |   |--- class: Pequeños ocasionales\n|   |   |--- Productos distintos >  23.5\n|   |   |   |--- class: En crecimiento\n|   |--- Ticket promedio (£) >  264.8\n|   |   |--- Días desde la última compra <= 37.5\n|   |   |   |--- class: En crecimiento\n|   |   |--- Días desde la última compra >  37.5\n|   |   |   |--- class: Grandes ocasionales\n|--- Número de facturas >  4.5\n|   |--- Productos distintos <= 79.5\n|   |   |--- Número de facturas <= 6.5\n|   |   |   |--- class: En crecimiento\n|   |   |--- Número de facturas >  6.5\n|   |   |   |--- class: VIP\n|   |--- Productos distintos >  79.5\n|   |   |--- Días desde la última compra <= 73.5\n|   |   |   |--- class: VIP\n|   |   |--- Días desde la última compra >  73.5\n|   |   |   |--- class: VIP\n"
+  },
+  "ajustes": [
+    {
+      "etapa": "Preprocesado",
+      "parámetro": "Transformación",
+      "valores probados": "sin transformar / log1p",
+      "elegido": "log1p",
+      "criterio": "Las cuatro variables son muy asimétricas; con log1p quedan casi simétricas (comparación de asimetría, notebook 02)"
+    },
+    {
+      "etapa": "Preprocesado",
+      "parámetro": "Escalado",
+      "valores probados": "StandardScaler / RobustScaler",
+      "elegido": "StandardScaler",
+      "criterio": "Todas las variables pesan igual en la distancia; RobustScaler daba más peso al ticket sin razón de negocio"
+    },
+    {
+      "etapa": "Preprocesado",
+      "parámetro": "Valores extremos",
+      "valores probados": "mantener / winsorizar",
+      "elegido": "winsorizar p1–p99 (en log1p)",
+      "criterio": "Los extremos ya no arrastran los centroides de K-Means"
+    },
+    {
+      "etapa": "Preprocesado",
+      "parámetro": "Variables del clustering",
+      "valores probados": "4 variables + gasto total (VIF) + tasa de devoluciones",
+      "elegido": "recency, frequency, ticket_promedio, productos_distintos",
+      "criterio": "Gasto = facturas × ticket (redundante, VIF); la tasa de devoluciones creaba un cluster solo de devolvedores"
+    },
+    {
+      "etapa": "K-Means",
+      "parámetro": "Número de clusters k",
+      "valores probados": "2 a 10",
+      "elegido": "4",
+      "criterio": "k = 2 gana en métricas pero no es accionable; k = 4 es estable y k = 5 es inestable"
+    },
+    {
+      "etapa": "K-Means",
+      "parámetro": "Inicializaciones (n_init)",
+      "valores probados": "—",
+      "elegido": "10 (k-means++)",
+      "criterio": "Se queda con la mejor de 10 inicializaciones"
+    },
+    {
+      "etapa": "GMM",
+      "parámetro": "Tipo de covarianza × k",
+      "valores probados": "diag, full, spherical, tied × k 2 a 10",
+      "elegido": "full, k = 7",
+      "criterio": "Menor BIC"
+    },
+    {
+      "etapa": "GMM",
+      "parámetro": "reg_covar",
+      "valores probados": "1e-6 a 0,1 (10 valores)",
+      "elegido": "0,05",
+      "criterio": "Mínimo valor sin componentes degenerados por los empates de frecuencia = 1"
+    },
+    {
+      "etapa": "DBSCAN",
+      "parámetro": "eps",
+      "valores probados": "codo de las distancias al 8.º vecino",
+      "elegido": "0,717",
+      "criterio": "Punto de máxima curvatura del gráfico de k-distancias"
+    },
+    {
+      "etapa": "DBSCAN",
+      "parámetro": "min_samples",
+      "valores probados": "regla 2 × nº de variables",
+      "elegido": "8",
+      "criterio": "Regla habitual de la literatura"
+    },
+    {
+      "etapa": "HDBSCAN",
+      "parámetro": "min_cluster_size",
+      "valores probados": "2 % de los clientes",
+      "elegido": "86",
+      "criterio": "Tamaño mínimo de un segmento útil"
+    },
+    {
+      "etapa": "t-SNE",
+      "parámetro": "perplexity",
+      "valores probados": "5, 30, 50, 100",
+      "elegido": "30",
+      "criterio": "Equilibrio entre estructura local y global (solo para visualizar)"
+    },
+    {
+      "etapa": "Árbol de decisión",
+      "parámetro": "max_depth × min_samples_leaf",
+      "valores probados": "9 × 4 = 36 combinaciones",
+      "elegido": "10 y 1",
+      "criterio": "Mayor exactitud en validación cruzada de 5 pliegues"
+    }
+  ]
+}
