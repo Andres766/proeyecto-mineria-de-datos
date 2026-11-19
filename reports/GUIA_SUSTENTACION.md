@@ -239,7 +239,7 @@ densidad y sesgan a DBSCAN; así todos los algoritmos se evalúan igual.
 5. **Entrenamiento y prueba:** reasignación con validación cruzada (98,2 %) y clasificadores con partición
    80 % / 20 % (91,3 % el árbol, 94,7 % el bosque).
 6. **Validación de negocio:** perfiles distintos e interpretables y estrategias con KPI medible.
-7. **Pruebas del código:** 106 pruebas automáticas con `pytest` (limpieza, variables, modelado, exactitud,
+7. **Pruebas del código:** 107 pruebas automáticas con `pytest` (limpieza, variables, modelado, exactitud,
    clasificación de clientes nuevos y la app).
 
 **18. Si las etiquetas del árbol salen del propio K-Means, ¿no es circular?**

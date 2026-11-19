@@ -284,6 +284,16 @@ def _cifras_segmentos(c: dict) -> None:
     datos = json.loads(config.JSON_SEGMENTOS.read_text(encoding="utf-8"))
     riesgo = ["Necesitan atención", "A punto de dormir", "En riesgo", "No se pueden perder", "Hibernando"]
     filas = []
+    tamanos = sorted(datos["segmentos"], key=lambda g: g["indicadores"]["clientes"])
+    for clave, g in (("menor", tamanos[0]), ("mayor", tamanos[-1])):
+        c[f"seg_{clave}_nombre"] = g["nombre"]
+        c[f"seg_{clave}_pct_clientes"] = pct(g["indicadores"]["pct_clientes"])
+    c["seg_ratio_mayor_menor"] = num(tamanos[-1]["indicadores"]["clientes"] / tamanos[0]["indicadores"]["clientes"], 2)
+    # El informe afirma que el segmento más disperso en realidad es el más compacto en t-SNE: se comprueba aquí.
+    if c["tsne_mas_disperso_real"] != c["tsne_mas_compacto_mapa"]:
+        raise ValueError("t-SNE: el segmento más disperso ya no es el más compacto en el mapa; revisa el informe")
+    nombres = {g["id"]: g["nombre"] for g in datos["segmentos"]}
+    c["tsne_nombre_disperso_real"] = nombres[int(c["tsne_mas_disperso_real"])]
     for g in datos["segmentos"]:
         s, ind, med = g["id"], g["indicadores"], g["medianas"]
         c[f"s{s}_nombre"] = g["nombre"]
@@ -356,10 +366,26 @@ def reglas_arbol_en_texto(reglas: str) -> list[str]:
         texto = re.sub(r"(\d)\.(\d)", r"\1,\2", texto).replace("<=", "≤")
         texto = re.sub(r"\s+", " ", texto)
         if texto.startswith("class:"):
-            salida.append(f"{' y '.join(condiciones[:nivel])} → **{texto.removeprefix('class:').strip()}**")
+            salida.append((condiciones[:nivel], texto.removeprefix("class:").strip()))
         else:
             condiciones[nivel:] = [texto]
-    return salida
+    return [f"{' y '.join(conds)} → **{clase}**" for conds, clase in _fusionar_hojas_hermanas(salida)]
+
+
+def _fusionar_hojas_hermanas(reglas: list[tuple[list[str], str]]) -> list[tuple[list[str], str]]:
+    """Une dos hojas hermanas con la misma clase («x ≤ a → C» y «x > a → C») en una sola regla sin esa condición."""
+    reglas = list(reglas)
+    cambiado = True
+    while cambiado:
+        cambiado = False
+        for i in range(len(reglas) - 1):
+            (conds_a, clase_a), (conds_b, clase_b) = reglas[i], reglas[i + 1]
+            if (clase_a == clase_b and conds_a and len(conds_a) == len(conds_b) and conds_a[:-1] == conds_b[:-1]
+                    and conds_a[-1].replace(" ≤ ", " > ") == conds_b[-1]):
+                reglas[i:i + 2] = [(conds_a[:-1], clase_a)]
+                cambiado = True
+                break
+    return reglas
 
 
 def _cifras_validacion(c: dict) -> None:
@@ -401,6 +427,10 @@ def _cifras_validacion(c: dict) -> None:
         "Segmento": nombre, "Precisión": pct(100 * fila["precision"]), "Sensibilidad": pct(100 * fila["recall"]),
         "F1": pct(100 * fila["f1"]), "Clientes en prueba": num(fila["soporte"]),
     } for nombre, fila in reporte.items()]))
+    # Balance de clases: con segmentos de tamaño parecido, la exactitud balanceada y el F1 macro deben coincidir con
+    # la exactitud; si una clase dominara, la exactitud saldría inflada respecto a ellas.
+    c["val_exactitud_balanceada"] = pct(100 * np.mean([fila["recall"] for fila in reporte.values()]))
+    c["val_f1_macro"] = pct(100 * np.mean([fila["f1"] for fila in reporte.values()]))
     peor = min(reporte.values(), key=lambda fila: fila["f1"])
     c["val_peor_segmento"] = peor["segmento"]
     c["val_peor_precision"] = pct(100 * peor["precision"])

@@ -39,3 +39,9 @@ def test_reglas_del_arbol_en_texto():
     texto = export_text(arbol, feature_names=["Facturas", "Ticket"], class_names=["A", "B", "C"], decimals=1)
     assert reglas_arbol_en_texto(texto) == ["Facturas ≤ 5,0 → **A**", "Facturas > 5,0 y Facturas ≤ 8,5 → **B**",
                                             "Facturas > 5,0 y Facturas > 8,5 → **C**"]
+
+
+def test_reglas_del_arbol_unen_hojas_hermanas_de_la_misma_clase():
+    texto = ("|--- Facturas <= 4.5\n|   |--- class: A\n|--- Facturas >  4.5\n"
+             "|   |--- Ticket <= 80.0\n|   |   |--- class: B\n|   |--- Ticket >  80.0\n|   |   |--- class: B\n")
+    assert reglas_arbol_en_texto(texto) == ["Facturas ≤ 4,5 → **A**", "Facturas > 4,5 → **B**"]

@@ -178,7 +178,7 @@ real. Aquí mide que los segmentos son reproducibles con datos nuevos y explicab
 
 **3. ¿Qué pruebas hicieron para validar?**
 Métricas internas, estabilidad en 50 submuestras (ARI 0,958), robustez a los empates
-(0,941), concordancia con RFM, exactitud con entrenamiento y prueba, y 106 pruebas
+(0,941), concordancia con RFM, exactitud con entrenamiento y prueba, y 107 pruebas
 automáticas del código con `pytest`.
 
 **4. ¿Qué ajustes hicieron?**
@@ -195,60 +195,67 @@ más profundidad solo memoriza.
 El árbol no prueba que los segmentos sean «verdaderos», sino que son reproducibles con reglas sencillas en clientes no
 vistos. Si fueran ruido, fallaría en prueba. La prueba más directa es la reasignación, que no usa otro modelo.
 
-**7. Las métricas dicen k = 2. ¿Por qué k = 4?**
+**7. ¿Están balanceadas las clases? ¿No infla eso la exactitud?**
+Están balanceadas en número de clientes: el segmento mayor (Grandes ocasionales, 28,4 %) tiene solo
+1,38 veces más clientes que el menor (VIP, 20,5 %), y la partición es
+estratificada. La exactitud balanceada del árbol es 91,4 % y el F1 macro 91,4 %, casi igual a su
+exactitud (91,3 %). El desbalance está en los ingresos (VIP aporta el 70,2 %): es un
+hallazgo de negocio, no un problema del modelo.
+
+**8. Las métricas dicen k = 2. ¿Por qué k = 4?**
 El silhouette baja con cada k porque los datos son una nube continua, y ahí siempre gana el k mínimo. k = 2 solo separa
 activos de inactivos; k = 4 es muy estable (peor caso 0,929) y da segmentos accionables.
 
-**8. ¿Por qué no k = 5?**
+**9. ¿Por qué no k = 5?**
 En el peor 10 % de submuestras su estabilidad cae a 0,744: tiene dos soluciones casi empatadas y salta
 de una a otra.
 
-**9. Un silhouette de 0,240 es bajo. ¿Es aceptable?**
+**10. Un silhouette de 0,240 es bajo. ¿Es aceptable?**
 Sí. Mide la separación entre grupos, y los clientes forman un continuo (lo confirmaron DBSCAN y HDBSCAN). El objetivo es
 dividir ese continuo en segmentos útiles, y para eso importan la estabilidad, la robustez y la interpretabilidad, que
 son altas.
 
-**10. ¿Por qué esas cuatro variables y no el gasto total?**
+**11. ¿Por qué esas cuatro variables y no el gasto total?**
 El gasto es facturas × ticket: incluirlo contaría la misma información dos veces. Frecuencia y ticket juntos ya lo
 contienen y además separan dos comportamientos distintos.
 
-**11. ¿Por qué log1p, recorte p1–p99 y estandarización?**
+**12. ¿Por qué log1p, recorte p1–p99 y estandarización?**
 Las variables tienen colas muy largas: sin log1p unos pocos mayoristas definirían toda la geometría. El recorte evita que
 los extremos arrastren los centroides sin sacar a nadie, y la estandarización hace que todas pesen igual.
 
-**12. ¿Qué pasó con GMM?**
+**13. ¿Qué pasó con GMM?**
 Un tercio de los clientes tiene una sola factura, y GMM ponía una campana de varianza casi cero sobre ese empate. Se
 corrigió con `reg_covar` = 0,05, pero quedó peor que K-Means (silhouette 0,145).
 
-**13. ¿Y DBSCAN?**
+**14. ¿Y DBSCAN?**
 Con `eps` = 0,717 y `min_samples` = 8 encuentra un solo grupo y 163 atípicos: no hay grupos separados
 por densidad. Se usa para detectar atípicos, de donde salen las cuentas clave.
 
-**14. ¿Para qué PCA y t-SNE?**
+**15. ¿Para qué PCA y t-SNE?**
 PCA para interpretar y dibujar (dos ejes explican el 80,2 %). t-SNE solo para visualizar: no conserva distancias ni
 tamaños, así que no sirve para validar.
 
-**15. ¿Qué son las cuentas clave?**
+**16. ¿Qué son las cuentas clave?**
 66 clientes VIP atípicos para DBSCAN y con gasto alto: el 1,5 % de los clientes y el
 32,3 % de los ingresos. Merecen un gestor de cuenta dedicado.
 
-**16. ¿Qué aporta frente al RFM?**
+**17. ¿Qué aporta frente al RFM?**
 RFM no distingue a los dos grupos de ocasionales; K-Means los separa por el tamaño del pedido (2,7 % frente
 a 15,8 % de los ingresos), lo que cambia cuánto invertir en reactivar a cada uno.
 
-**17. ¿Cómo clasifica la app a un cliente nuevo?**
+**18. ¿Cómo clasifica la app a un cliente nuevo?**
 No reentrena: carga el mismo preprocesador (con los límites del entrenamiento) y el mismo K-Means. Las pruebas
 comprueban que reproduce el segmento de los 4.324 clientes y las 66 cuentas clave.
 
-**18. ¿Por qué quitaron las líneas sin cliente?**
+**19. ¿Por qué quitaron las líneas sin cliente?**
 Porque se segmentan clientes y esas líneas (24,93 %) no se pueden asignar a nadie. Está declarado como
 limitación.
 
-**19. ¿Cómo sabrían si las estrategias funcionan?**
+**20. ¿Cómo sabrían si las estrategias funcionan?**
 Cada estrategia tiene un KPI con su línea base actual. Se aplicaría a una parte del segmento, con otra como grupo de
 control, y se compararía el KPI.
 
-**20. ¿Cuáles son las limitaciones?**
+**21. ¿Cuáles son las limitaciones?**
 Un solo año de datos (no separa estacionalidad de crecimiento), clientes sin identificar excluidos, segmentación como
 foto fija que hay que recalcular, y estrategias aún sin probar.
 

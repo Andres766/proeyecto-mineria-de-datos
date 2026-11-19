@@ -86,7 +86,7 @@ python -m segmentacion.limpieza     # limpieza y bitácora
 jupyter nbconvert --to notebook --execute --inplace notebooks/01_eda.ipynb notebooks/02_features.ipynb notebooks/03_modelado.ipynb notebooks/04_perfiles.ipynb notebooks/05_validacion.ipynb
 python -m segmentacion.reportes     # informe, guía de sustentación, guion y este README (cifras calculadas)
 python scripts/exportar_informe.py  # informe en Word y PDF (el PDF requiere Microsoft Word)
-pytest                              # 106 pruebas
+pytest                              # 107 pruebas
 ```
 
 Los notebooks se ejecutan en orden: el 04 completa el archivo de clientes segmentados que genera el 03, y el 05 mide la

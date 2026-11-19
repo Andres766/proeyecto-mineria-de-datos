@@ -4,31 +4,30 @@ Proyecto final · Inteligencia de Negocios y Minería de Datos · Ingeniería de
 
 ## Resumen
 
-Este trabajo diseña un sistema de segmentación de clientes para un minorista online británico de artículos de regalo a
-partir del dataset *Online Retail* (UCI). Las transacciones originales ({filas_originales} líneas) se limpiaron hasta
-{filas_limpias} líneas de venta de {clientes} clientes, con un tratamiento explícito de las cancelaciones que anulan
-compras. Por cada cliente se construyeron variables de comportamiento (recency, frecuencia, ticket promedio y variedad
-de productos), se transformaron con log1p, se recortaron a los percentiles 1–99 y se estandarizaron. Se compararon tres
-familias de algoritmos (K-Means, mezclas gaussianas y DBSCAN/HDBSCAN) y se usaron PCA y t-SNE para interpretar y
-visualizar. La validación combinó métricas internas, estabilidad por remuestreo, robustez a los empates de la variable
-frecuencia, concordancia con un baseline RFM por quintiles, pruebas de exactitud con datos de entrenamiento y de prueba,
-y un criterio de negocio.
+Este trabajo diseña un sistema de segmentación de clientes para un minorista en línea británico de artículos de regalo
+a partir del conjunto de datos *Online Retail*. Las {filas_originales} líneas de factura originales se limpiaron hasta
+{filas_limpias} líneas de venta de {clientes} clientes, emparejando cada cancelación con la compra que anula. Por
+cliente se construyeron variables de recency, frecuencia, ticket promedio y variedad de productos, que se
+transformaron con log1p, se recortaron a los percentiles 1–99 y se estandarizaron. Se compararon K-Means, mezclas
+gaussianas y DBSCAN/HDBSCAN, y se usaron PCA y t-SNE para interpretar y visualizar. La validación combinó métricas
+internas, estabilidad por remuestreo, concordancia con un baseline RFM, pruebas de exactitud con datos de
+entrenamiento y de prueba, y un criterio de negocio. El modelo final, K-Means con k = {k_final} (silhouette
+{final_silhouette}; estabilidad mediana {final_estabilidad_mediana}), asigna el mismo segmento al {val_reasignacion}
+de los clientes que no vio al entrenar, y un árbol de decisión reproduce sus segmentos con un {val_arbol_prueba} de
+exactitud en prueba. Se obtuvieron cuatro segmentos accionables de tamaño equilibrado: {s3_nombre}
+({s3_pct_clientes} de los clientes y {s3_pct_ingresos} de los ingresos), {s2_nombre}, {s1_nombre} y {s0_nombre}.
+Dentro de VIP, los atípicos de DBSCAN identifican {ck_clientes} cuentas clave ({ck_pct_clientes} de los clientes) que
+generan el {ck_pct_ingresos} de los ingresos. Cada segmento cuenta con estrategias de marketing con acción, momento y
+KPI, y los resultados se publican en un aplicativo web en Streamlit.
 
-El modelo final es **K-Means con k = {k_final}** (silhouette {final_silhouette}, estabilidad mediana
-{final_estabilidad_mediana}). Al clasificar clientes que no vio al entrenar, coincide con el segmento final en el
-{val_reasignacion} de los casos, y un árbol de decisión reproduce los segmentos con un {val_arbol_prueba} de exactitud
-en prueba. Da cuatro segmentos accionables: **{s3_nombre}** ({s3_pct_clientes} de los clientes y
-{s3_pct_ingresos} de los ingresos), **{s2_nombre}**, **{s1_nombre}** y **{s0_nombre}**. Dentro de VIP, el cruce con los
-atípicos de DBSCAN identifica un subgrupo de **{ck_nombre_subgrupo}**: {ck_clientes} clientes ({ck_pct_clientes}) que
-generan el {ck_pct_ingresos} de los ingresos. Cada segmento tiene estrategias de marketing con acción, momento y KPI.
-Los resultados se publican en un aplicativo web en Streamlit.
+*Palabras clave:* segmentación de clientes, clustering, K-Means, reducción de dimensionalidad, análisis RFM
 
-## 1. Introducción
+## Introducción
 
 Segmentar clientes permite dejar de tratar a todos por igual: concentrar recursos en quienes generan más valor,
 recuperar a quienes se están yendo y no gastar en acciones caras con quien no va a responder. El enfoque clásico es el
-análisis RFM (Recency, Frequency, Monetary), que puntúa a cada cliente por quintiles. Es sencillo y explicable, pero
-sus cortes son arbitrarios y no usan la estructura conjunta de los datos.
+análisis RFM (Recency, Frequency, Monetary; Hughes, 1994), que puntúa a cada cliente por quintiles. Es sencillo y
+explicable, pero sus cortes son arbitrarios y no usan la estructura conjunta de los datos.
 
 **Objetivo.** Diseñar un sistema de segmentación basado en clustering y reducción de dimensionalidad que identifique
 perfiles de clientes útiles para estrategias de marketing, validarlo con rigor y desplegarlo en un aplicativo web.
@@ -45,10 +44,10 @@ perfiles de clientes útiles para estrategias de marketing, validarlo con rigor 
 Todas las cifras de este informe salen de ejecutar el código del repositorio: el documento se genera desde una
 plantilla con `python -m segmentacion.reportes`.
 
-## 2. Datos
+## Datos
 
-El dataset *Online Retail* (Chen, Sahinoglu y Guo, 2012) contiene las transacciones de una tienda online británica
-entre el {fecha_inicio} y el {fecha_fin} (último registro). Cada fila es una línea de factura con ocho columnas:
+El conjunto de datos *Online Retail* (Chen, 2015), analizado antes con un enfoque RFM por Chen et al. (2012), contiene
+las transacciones de una tienda en línea británica entre el {fecha_inicio} y el {fecha_fin} (último registro). Cada fila es una línea de factura con ocho columnas:
 
 - número de factura (`InvoiceNo`; las que empiezan por "C" son cancelaciones);
 - código y descripción del producto;
@@ -57,12 +56,12 @@ entre el {fecha_inicio} y el {fecha_fin} (último registro). Cada fila es una l�
 
 Muchos de sus clientes son mayoristas, lo que produce distribuciones muy asimétricas.
 
-## 3. Metodología
+## Metodología
 
 El trabajo sigue las fases de un proyecto de minería de datos: comprensión y preparación de los datos, modelado,
 evaluación y despliegue.
 
-- **Herramientas:** Python 3.11, pandas, scikit-learn, Plotly y Streamlit.
+- **Herramientas:** Python 3.11, pandas, scikit-learn (Pedregosa et al., 2011), Plotly y Streamlit.
 - **Organización del código:** la lógica está en un paquete (`src/segmentacion`: carga, limpieza, características,
   modelado, evaluación, perfilamiento y predicción) y los notebooks solo la invocan y narran los resultados.
 - **Reproducibilidad:** todos los procesos aleatorios usan `random_state = 42`, las dependencias tienen versiones fijas
@@ -78,9 +77,9 @@ Las decisiones se tomaron comparando alternativas con datos y no por convención
 - el `eps` de DBSCAN;
 - el número de segmentos.
 
-## 4. Análisis exploratorio y limpieza
+## Análisis exploratorio y limpieza
 
-### 4.1 Calidad de los datos
+### Calidad de los datos
 
 - **Clientes sin identificar.** El {pct_lineas_sin_cliente} de las líneas no tiene `CustomerID`. Suponen el
   {pct_importe_sin_cliente} del importe vendido y faltan por factura completa (compras sin cliente registrado). No se
@@ -91,7 +90,7 @@ Las decisiones se tomaron comparando alternativas con datos y no por convención
 - **Códigos que no son producto.** Se identificaron revisando sus descripciones: portes, comisiones, descuentos,
   ajustes manuales y bonos regalo.
 
-### 4.2 Cancelaciones y compras anuladas
+### Cancelaciones y compras anuladas
 
 Los dos mayores valores de cantidad del dataset (hasta {max_cantidad_anulada} unidades) son compras que el mismo
 cliente canceló minutos después. Si solo se eliminaran las facturas "C", esas compras quedarían como ventas reales e
@@ -107,7 +106,7 @@ Las pruebas automáticas detectaron un error en la primera versión del empareja
 compras idénticas y dos cancelaciones idénticas, solo se anulaba una compra, porque ambas cancelaciones apuntaban a la
 misma. Se corrigió con un emparejamiento iterativo realmente 1 a 1 y se regeneraron todos los resultados.
 
-Tabla: Bitácora de limpieza (filas antes y después de cada paso).
+Tabla: Bitácora de limpieza: filas antes y después de cada paso
 
 {tabla_bitacora}
 
@@ -116,7 +115,7 @@ Tabla: Bitácora de limpieza (filas antes y después de cada paso).
 El resultado son {filas_limpias} líneas, {facturas} facturas, {clientes} clientes, {productos} productos de {paises}
 países y {ingresos} en ventas.
 
-### 4.3 Patrones de venta
+### Patrones de venta
 
 Las ventas tienen una fuerte estacionalidad de fin de año: el mes de mayor facturación es {mes_pico}
 ({ingresos_mes_pico}). Diciembre de 2011 solo llega hasta el día 9: se conserva para calcular la recency, pero se marca
@@ -130,7 +129,7 @@ laboral, sumado a pedidos de gran tamaño, indica una clientela en buena parte m
 
 ![Facturas por día de la semana y por hora](figures/01_dia_hora.png)
 
-### 4.4 Distribuciones y concentración
+### Distribuciones y concentración
 
 Todas las variables son muy asimétricas a la derecha. El 1 % de los clientes genera el {pct_ingresos_top1} de los
 ingresos. En escala logarítmica las distribuciones se vuelven aproximadamente simétricas, lo que justifica transformar
@@ -138,9 +137,9 @@ con log1p antes de usar algoritmos basados en distancias.
 
 ![Distribuciones en escala logarítmica](figures/01_distribuciones_log.png)
 
-## 5. Ingeniería de características
+## Ingeniería de características
 
-### 5.1 Variables por cliente
+### Variables por cliente
 
 Se calcularon, para cada cliente:
 
@@ -151,10 +150,12 @@ Se calcularon, para cada cliente:
 - **Ticket promedio**, **productos distintos**, **antigüedad**, **días promedio entre compras**, **unidades por
   factura** y **tasa de devoluciones**.
 
-### 5.2 Días entre compras
+### Días entre compras
 
 La variable no está definida para los {clientes_una_compra} clientes de una sola factura ({pct_una_compra}). Se
 compararon cuatro alternativas:
+
+Tabla: Alternativas para tratar los días entre compras de los clientes de una sola factura
 
 | Alternativa | Problema |
 |---|---|
@@ -165,7 +166,7 @@ compararon cuatro alternativas:
 
 Se excluyó del clustering y se usa solo para perfilar.
 
-### 5.3 Tasa de devoluciones
+### Tasa de devoluciones
 
 Se define de forma coherente con la limpieza: importe devuelto computable dividido entre el importe comprado.
 
@@ -179,7 +180,7 @@ El {pct_tasa_cero} de los clientes tiene tasa 0. Incluirla en el clustering crea
 el silhouette de forma engañosa (de {silhouette_sin_tasa_k3} a {silhouette_con_tasa_k3} con k = 3). Por eso se usa
 solo para perfilar.
 
-### 5.4 Selección de variables
+### Selección de variables
 
 El gasto total es exactamente frecuencia × ticket promedio, así que en escala logarítmica es una suma de las otras dos.
 Con las tres juntas el factor de inflación de la varianza (VIF) se dispara: {vif_monetary} en monetary, {vif_frequency}
@@ -193,7 +194,7 @@ sola compra.
 
 ![Correlación de Spearman entre variables de cliente](figures/02_correlaciones.png)
 
-### 5.5 Transformación, escalado y clientes extremos
+### Transformación, escalado y clientes extremos
 
 - **Transformación:** log1p deja las cuatro variables aproximadamente simétricas.
 - **Escalado:** se eligió StandardScaler porque da a todas las variables el mismo peso. RobustScaler obtenía un
@@ -205,7 +206,7 @@ sola compra.
 
 ![Variables antes y después de log1p](figures/02_log1p.png)
 
-### 5.6 Baseline RFM
+### Baseline RFM
 
 Como referencia se construyó la segmentación RFM clásica: puntuaciones de 1 a 5 por quintiles y diez segmentos según
 el mapa R × F (Campeones, Leales, En riesgo, Hibernando, etc.). Tiene una limitación: como un tercio de los clientes
@@ -213,9 +214,9 @@ tiene frequency = 1, los quintiles de F se cortan en parte por orden de aparici�
 
 ![Baseline RFM: peso de cada segmento en clientes e ingresos](figures/02_baseline_rfm.png)
 
-## 6. Modelado
+## Modelado
 
-### 6.1 Reducción de dimensionalidad con PCA
+### Reducción de dimensionalidad con PCA
 
 PCA sobre las cuatro variables estandarizadas: la primera componente explica el {pca_pc1} de la varianza y la segunda
 el {pca_pc2} (juntas, el {pca_2}). Sus cargas permiten interpretarlas:
@@ -231,21 +232,24 @@ para interpretar y visualizar.
 
 ![Cargas de las componentes principales](figures/03_pca_cargas.png)
 
-### 6.2 K-Means
+### K-Means
 
-Se evaluó k = 2 a 10 con la inercia (método del codo), el silhouette, Davies-Bouldin y Calinski-Harabasz. Las métricas
-internas favorecen k = 2 (silhouette {k2_silhouette}) y empeoran poco a poco al subir k. La estabilidad se midió con 50
-submuestras del 80 %, reajustando el modelo y comparando con el ARI.
+K-Means (MacQueen, 1967) se ajustó con la inicialización k-means++ (Arthur y Vassilvitskii, 2007). Se evaluó k = 2 a
+10 con la inercia (método del codo), el silhouette (Rousseeuw, 1987), el índice de Davies-Bouldin (Davies y Bouldin,
+1979) y el de Calinski-Harabasz (Caliński y Harabasz, 1974). Las métricas internas favorecen k = 2 (silhouette
+{k2_silhouette}) y empeoran poco a poco al subir k. La estabilidad se midió con 50 submuestras del 80 % (Hennig,
+2007), reajustando el modelo y comparando con el índice de Rand ajustado (ARI; Hubert y Arabie, 1985).
 
 ![Métricas de K-Means para k = 2 a 10](figures/03_kmeans_metricas.png)
 
 ![Estabilidad de K-Means por k](figures/03_kmeans_estabilidad.png)
 
-### 6.3 Mezclas gaussianas (GMM) y componentes degenerados
+### Mezclas gaussianas (GMM) y componentes degenerados
 
 Con la regularización por defecto de scikit-learn (`reg_covar` = 1e-6), GMM degenera. Coloca componentes exactamente
 sobre el valor frequency = 1, compartido por un tercio de los clientes, con varianza casi nula en esa dimensión. La
-verosimilitud crece sin límite y el BIC baja artificialmente hasta {bic_degenerado}.
+verosimilitud crece sin límite y el criterio de información bayesiano (BIC; Schwarz, 1978) baja artificialmente hasta
+{bic_degenerado}.
 
 Se definió un criterio de degeneración (varianza empírica de un componente en frequency menor que 0,01) y se buscó el
 `reg_covar` mínimo que lo evita: **{reg_covar}**. Con ese valor, el menor BIC ({bic_elegido}) corresponde a covarianza
@@ -254,17 +258,17 @@ estabilidad mediana de {gmm_estabilidad_mediana} y un componente con solo el {gm
 
 ![Varianza empírica mínima frente a reg_covar](figures/03_gmm_reg_covar.png)
 
-### 6.4 DBSCAN y HDBSCAN
+### DBSCAN y HDBSCAN
 
-- **Parámetros de DBSCAN:** `min_samples` = {min_samples} (dos veces el número de variables) y `eps` = {eps}, tomado del
-  codo del gráfico de k-distancias.
+- **Parámetros de DBSCAN (Ester et al., 1996):** `min_samples` = {min_samples} (dos veces el número de variables, como
+  recomiendan Schubert et al., 2017) y `eps` = {eps}, tomado del codo del gráfico de k-distancias.
 - **Falsas zonas densas por los empates.** Los clientes con frequency = 1 tienen una distancia mediana a su octavo
   vecino de {kdist_f1}, frente a {kdist_resto} en el resto. Parecen más densos solo porque comparten coordenada. Con eps
   menor que el hueco entre frequency = 1 y 2 ({hueco_frequency}), los "clusters" de DBSCAN son rebanadas de un único
   valor de frecuencia.
 - **Resultado de DBSCAN:** con el eps del codo queda un único grupo denso y {atipicos} clientes atípicos
   ({pct_atipicos}), que generan el {pct_ingresos_atipicos} de los ingresos.
-- **HDBSCAN:** separa exactamente a los clientes de una factura del resto. Al romper los empates repartiendo la
+- **HDBSCAN (Campello et al., 2013):** separa exactamente a los clientes de una factura del resto. Al romper los empates repartiendo la
   frecuencia dentro de su intervalo de redondeo, esa estructura desaparece (ARI {hdbscan_ari_descuantizado}): es un
   artefacto.
 
@@ -272,22 +276,25 @@ Conclusión: no hay grupos separados por densidad. DBSCAN se usa para marcar at�
 
 ![Gráfico de k-distancias de DBSCAN](figures/03_dbscan_kdistancias.png)
 
-### 6.5 t-SNE
+### t-SNE
 
-t-SNE se usó solo para visualizar, con perplexities de 5, 30, 50 y 100. Conserva vecindarios locales, pero no las
-distancias entre grupos ni sus tamaños, y el dibujo cambia con la perplexity. Se comprobó con los datos: el segmento
-más disperso en realidad (segmento {tsne_mas_disperso_real}) aparece como el más compacto en el mapa (segmento
-{tsne_mas_compacto_mapa}). Por eso no se usó para validar.
+t-SNE (van der Maaten y Hinton, 2008) se usó solo para visualizar, con perplexities de 5, 30, 50 y 100. Conserva
+vecindarios locales, pero no las distancias entre grupos ni sus tamaños, y el dibujo cambia con la perplexity
+(Wattenberg et al., 2016). Se comprobó con los datos: {tsne_nombre_disperso_real}, el segmento más disperso en
+realidad, aparece en el mapa como el más compacto. Por eso no se usó para validar.
 
 ![t-SNE con distintas perplexities, coloreado con los segmentos de K-Means](figures/03_tsne_perplexities.png)
 
-## 7. Validación y elección del modelo
+## Validación y elección del modelo
 
-Tabla: Comparación de los modelos candidatos (métricas en el mismo espacio; en DBSCAN y HDBSCAN el ruido se excluye).
+Tabla: Comparación de los modelos candidatos
 
 {tabla_modelos}
 
-### 7.1 Estabilidad: k = 4 frente a k = 5
+*Nota.* Todas las métricas se calculan en el mismo espacio; en DBSCAN y HDBSCAN se excluye el ruido. ↑ = mayor es
+mejor; ↓ = menor es mejor.
+
+### Estabilidad: k = 4 frente a k = 5
 
 k = 5 tiene la mejor estabilidad mediana ({k5_estabilidad_mediana}), pero su percentil 10 cae a
 {k5_estabilidad_p10}. Tiene dos soluciones casi igual de buenas: las alternativas solo tienen entre un {k5_dif_min} y
@@ -297,14 +304,14 @@ caso.
 
 ![Distribución de la estabilidad con k = 4 y k = 5](figures/03_estabilidad_k4_k5.png)
 
-### 7.2 Concordancia
+### Concordancia
 
 El ARI del modelo final con el baseline RFM es {final_ari_baseline_rfm}. Es bajo en parte porque se comparan cuatro
-segmentos con diez, pero la tabla cruzada (sección 8) muestra que encajan.
+segmentos con diez, pero la tabla cruzada (sección Resultados) muestra que encajan.
 
 ![Concordancia entre modelos y con el baseline RFM (ARI)](figures/03_matriz_ari.png)
 
-### 7.3 Exactitud con datos de entrenamiento y de prueba
+### Exactitud con datos de entrenamiento y de prueba
 
 En un problema supervisado la exactitud compara la predicción con una etiqueta real. La segmentación es no supervisada:
 no existe un «segmento verdadero» de cada cliente, así que la exactitud no se puede calcular sobre los clusters. Lo que sí
@@ -322,9 +329,12 @@ el modelo no ha visto (notebook `05_validacion`). Se hicieron dos pruebas:
    Los hiperparámetros se eligieron solo con validación cruzada dentro del entrenamiento (Kohavi, 1995), y el conjunto
    de prueba se usó una única vez al final.
 
-Tabla: Exactitud de los clasificadores que aprenden los segmentos (validación cruzada de 5 pliegues en el entrenamiento y conjunto de prueba de {val_n_prueba} clientes).
+Tabla: Exactitud de los clasificadores que aprenden los segmentos
 
 {tabla_clasificadores}
+
+*Nota.* La validación cruzada es de 5 pliegues dentro del conjunto de entrenamiento; el conjunto de prueba tiene
+{val_n_prueba} clientes.
 
 El árbol de decisión (Breiman et al., 1984) se ajustó con una búsqueda en rejilla de {val_n_combinaciones}
 combinaciones de profundidad máxima y mínimo de clientes por hoja. La mejor es profundidad {val_arbol_profundidad} con
@@ -337,13 +347,23 @@ que la estimación es fiable.
 
 ![Exactitud del árbol de decisión según su profundidad](figures/05_exactitud_profundidad.png)
 
-Tabla: Precisión, sensibilidad y F1 del árbol ajustado por segmento (conjunto de prueba).
+Tabla: Precisión, sensibilidad y F1 del árbol ajustado por segmento
 
 {tabla_reporte_segmentos}
+
+*Nota.* Resultados en el conjunto de prueba.
 
 Los errores se concentran en **{val_peor_segmento}** (precisión {val_peor_precision}, sensibilidad {val_peor_recall}),
 el segmento intermedio que limita con los otros tres. Ningún VIP se confunde con un pequeño ocasional ni al revés: los
 errores son siempre entre segmentos vecinos.
+
+**Balance de clases.** Los cuatro segmentos tienen tamaños parecidos: el mayor ({seg_mayor_nombre},
+{seg_mayor_pct_clientes} de los clientes) tiene solo {seg_ratio_mayor_menor} veces más clientes que el menor
+({seg_menor_nombre}, {seg_menor_pct_clientes}), y la partición entre entrenamiento y prueba es estratificada. Por eso
+ninguna clase dominante infla la exactitud: la exactitud balanceada del árbol ajustado (media de la sensibilidad de los
+cuatro segmentos) es {val_exactitud_balanceada} y su F1 macro, {val_f1_macro}, prácticamente iguales a su exactitud de
+{val_arbol_prueba}. El desbalance está en los ingresos ({s3_nombre} aporta el {s3_pct_ingresos}), y eso es un hallazgo
+de negocio, no un problema del modelo.
 
 ![Matriz de confusión del árbol ajustado en el conjunto de prueba](figures/05_matriz_confusion.png)
 
@@ -351,13 +371,13 @@ Un árbol de solo profundidad 3 acierta el {val_arbol3_prueba} en prueba con reg
 
 {reglas_arbol3}
 
-### 7.4 Ajustes de hiperparámetros
+### Ajustes de hiperparámetros
 
-Tabla: Hiperparámetros y decisiones de modelado probados, valor elegido y criterio.
+Tabla: Hiperparámetros y decisiones de modelado probados, valor elegido y criterio
 
 {tabla_ajustes}
 
-### 7.5 Decisión
+### Decisión
 
 Se eligió **K-Means con k = {k_final}**:
 
@@ -379,11 +399,13 @@ grupos sustancial, y eso coincide con lo que muestran DBSCAN y HDBSCAN: los clie
 descubrir grupos naturales, sino **particionar ese continuo** en segmentos útiles. Para eso importa que la partición
 sea estable, robusta e interpretable, y lo es.
 
-## 8. Resultados: perfiles de los segmentos
+## Resultados: perfiles de los segmentos
 
-Tabla: Perfil de los segmentos (medianas).
+Tabla: Perfil de los segmentos
 
 {tabla_segmentos}
+
+*Nota.* Recency, facturas, ticket, productos y gasto son medianas de cada segmento.
 
 - **{s3_nombre}:** compran a menudo ({s3_frequency} facturas de mediana), hace poco ({s3_recency} días) y mucha
   variedad ({s3_productos} productos). Generan el {s3_pct_ingresos} de los ingresos con el {s3_pct_clientes} de los
@@ -419,14 +441,14 @@ es independiente de la recency, así que estas cifras se interpretan con cautela
 
 ![Estacionalidad de cada segmento](figures/04_estacionalidad.png)
 
-## 9. Estrategias de marketing
+## Estrategias de marketing
 
 Cada estrategia tiene una acción concreta, el momento de aplicarla y un KPI. La línea base es el valor actual del
 indicador, calculado con los datos; no se fijan metas inventadas.
 
 {lista_estrategias}
 
-## 10. Aplicativo web
+## Aplicativo web
 
 El aplicativo, desarrollado en Streamlit y Plotly, tiene seis páginas:
 
@@ -447,7 +469,7 @@ solo las dependencias de despliegue y en un contenedor Docker.
 
 ![Clasificación de un cliente nuevo sobre el mapa PCA](figures/app_explorador.png)
 
-## 11. Conclusiones
+## Conclusiones
 
 1. Una limpieza cuidadosa cambia el resultado. Sin el emparejamiento de compras anuladas aparecerían clientes con
    decenas de miles de libras de gasto que en realidad no compraron.
@@ -464,7 +486,7 @@ solo las dependencias de despliegue y en un contenedor Docker.
    reasignación coincide en el {val_reasignacion} de los casos y un árbol de decisión los reconoce con un
    {val_arbol_prueba} de exactitud, con reglas sencillas que se pueden explicar a negocio.
 
-## 12. Limitaciones y trabajo futuro
+## Limitaciones y trabajo futuro
 
 - Se excluyó el {pct_lineas_sin_cliente} de las líneas, sin cliente identificado; la segmentación no describe a esos
   compradores.
@@ -477,44 +499,54 @@ solo las dependencias de despliegue y en un contenedor Docker.
 
 ## Referencias
 
-- Arthur, D. y Vassilvitskii, S. (2007). k-means++: The advantages of careful seeding. *Proceedings of the 18th Annual
-  ACM-SIAM Symposium on Discrete Algorithms*, 1027–1035.
-- Breiman, L. (2001). Random forests. *Machine Learning*, 45(1), 5–32.
-- Breiman, L., Friedman, J. H., Olshen, R. A. y Stone, C. J. (1984). *Classification and Regression Trees*. Wadsworth.
-- Caliński, T. y Harabasz, J. (1974). A dendrite method for cluster analysis. *Communications in Statistics*, 3(1), 1–27.
+- Arthur, D. y Vassilvitskii, S. (2007). k-means++: The advantages of careful seeding. En *Proceedings of the
+  Eighteenth Annual ACM-SIAM Symposium on Discrete Algorithms* (pp. 1027–1035). Society for Industrial and Applied
+  Mathematics.
+- Breiman, L. (2001). Random forests. *Machine Learning*, *45*(1), 5–32. https://doi.org/10.1023/A:1010933404324
+- Breiman, L., Friedman, J. H., Olshen, R. A. y Stone, C. J. (1984). *Classification and regression trees*. Wadsworth.
+- Caliński, T. y Harabasz, J. (1974). A dendrite method for cluster analysis. *Communications in Statistics*, *3*(1),
+  1–27. https://doi.org/10.1080/03610927408827101
 - Campello, R. J. G. B., Moulavi, D. y Sander, J. (2013). Density-based clustering based on hierarchical density
-  estimates. *Advances in Knowledge Discovery and Data Mining (PAKDD)*, 160–172.
-- Chen, D., Sahinoglu, Z. y Guo, Y. (2012). Data mining for the online retail industry: A case study of RFM model-based
-  customer segmentation using data mining. *Journal of Database Marketing & Customer Strategy Management*, 19(3),
-  197–208.
+  estimates. En J. Pei, V. S. Tseng, L. Cao, H. Motoda y G. Xu (Eds.), *Advances in knowledge discovery and data
+  mining* (pp. 160–172). Springer. https://doi.org/10.1007/978-3-642-37456-2_14
+- Chen, D. (2015). *Online retail* [Conjunto de datos]. UCI Machine Learning Repository.
+  https://doi.org/10.24432/C5BW33
+- Chen, D., Sain, S. L. y Guo, K. (2012). Data mining for the online retail industry: A case study of RFM model-based
+  customer segmentation using data mining. *Journal of Database Marketing & Customer Strategy Management*, *19*(3),
+  197–208. https://doi.org/10.1057/dbm.2012.17
 - Davies, D. L. y Bouldin, D. W. (1979). A cluster separation measure. *IEEE Transactions on Pattern Analysis and
-  Machine Intelligence*, 1(2), 224–227.
+  Machine Intelligence*, *PAMI-1*(2), 224–227. https://doi.org/10.1109/TPAMI.1979.4766909
 - Ester, M., Kriegel, H.-P., Sander, J. y Xu, X. (1996). A density-based algorithm for discovering clusters in large
-  spatial databases with noise. *Proceedings of the 2nd International Conference on Knowledge Discovery and Data
-  Mining (KDD)*, 226–231.
-- Hennig, C. (2007). Cluster-wise assessment of cluster stability. *Computational Statistics & Data Analysis*, 52(1),
-  258–271.
-- Hubert, L. y Arabie, P. (1985). Comparing partitions. *Journal of Classification*, 2(1), 193–218.
-- Hughes, A. M. (1994). *Strategic Database Marketing*. Probus Publishing.
-- Kaufman, L. y Rousseeuw, P. J. (1990). *Finding Groups in Data: An Introduction to Cluster Analysis*. John Wiley &
-  Sons.
-- Kohavi, R. (1995). A study of cross-validation and bootstrap for accuracy estimation and model selection.
-  *Proceedings of the 14th International Joint Conference on Artificial Intelligence (IJCAI)*, 2, 1137–1143.
-- Kuhn, H. W. (1955). The Hungarian method for the assignment problem. *Naval Research Logistics Quarterly*, 2(1–2),
-  83–97.
+  spatial databases with noise. En *Proceedings of the Second International Conference on Knowledge Discovery and
+  Data Mining* (pp. 226–231). AAAI Press.
+- Hennig, C. (2007). Cluster-wise assessment of cluster stability. *Computational Statistics & Data Analysis*, *52*(1),
+  258–271. https://doi.org/10.1016/j.csda.2006.11.025
+- Hubert, L. y Arabie, P. (1985). Comparing partitions. *Journal of Classification*, *2*(1), 193–218.
+  https://doi.org/10.1007/BF01908075
+- Hughes, A. M. (1994). *Strategic database marketing*. Probus Publishing.
+- Kaufman, L. y Rousseeuw, P. J. (1990). *Finding groups in data: An introduction to cluster analysis*. John Wiley &
+  Sons. https://doi.org/10.1002/9780470316801
+- Kohavi, R. (1995). A study of cross-validation and bootstrap for accuracy estimation and model selection. En
+  *Proceedings of the 14th International Joint Conference on Artificial Intelligence* (Vol. 2, pp. 1137–1143).
+  Morgan Kaufmann.
+- Kuhn, H. W. (1955). The Hungarian method for the assignment problem. *Naval Research Logistics Quarterly*, *2*(1–2),
+  83–97. https://doi.org/10.1002/nav.3800020109
 - Lange, T., Roth, V., Braun, M. L. y Buhmann, J. M. (2004). Stability-based validation of clustering solutions.
-  *Neural Computation*, 16(6), 1299–1323.
-- MacQueen, J. (1967). Some methods for classification and analysis of multivariate observations. *Proceedings of the
-  Fifth Berkeley Symposium on Mathematical Statistics and Probability*, 1, 281–297.
-- Pedregosa, F. et al. (2011). Scikit-learn: Machine learning in Python. *Journal of Machine Learning Research*, 12,
-  2825–2830.
+  *Neural Computation*, *16*(6), 1299–1323. https://doi.org/10.1162/089976604773717621
+- MacQueen, J. (1967). Some methods for classification and analysis of multivariate observations. En L. M. Le Cam y
+  J. Neyman (Eds.), *Proceedings of the Fifth Berkeley Symposium on Mathematical Statistics and Probability* (Vol. 1,
+  pp. 281–297). University of California Press.
+- Pedregosa, F., Varoquaux, G., Gramfort, A., Michel, V., Thirion, B., Grisel, O., Blondel, M., Prettenhofer, P.,
+  Weiss, R., Dubourg, V., Vanderplas, J., Passos, A., Cournapeau, D., Brucher, M., Perrot, M. y Duchesnay, É.
+  (2011). Scikit-learn: Machine learning in Python. *Journal of Machine Learning Research*, *12*, 2825–2830.
 - Rousseeuw, P. J. (1987). Silhouettes: A graphical aid to the interpretation and validation of cluster analysis.
-  *Journal of Computational and Applied Mathematics*, 20, 53–65.
+  *Journal of Computational and Applied Mathematics*, *20*, 53–65. https://doi.org/10.1016/0377-0427(87)90125-7
 - Schubert, E., Sander, J., Ester, M., Kriegel, H.-P. y Xu, X. (2017). DBSCAN revisited, revisited: Why and how you
-  should (still) use DBSCAN. *ACM Transactions on Database Systems*, 42(3), 1–21.
-- Schwarz, G. (1978). Estimating the dimension of a model. *The Annals of Statistics*, 6(2), 461–464.
-- UCI Machine Learning Repository. Online Retail [Dataset]. https://archive.ics.uci.edu/dataset/352/online+retail
-- van der Maaten, L. y Hinton, G. (2008). Visualizing data using t-SNE. *Journal of Machine Learning Research*, 9,
-  2579–2605.
-- Wattenberg, M., Viégas, F. y Johnson, I. (2016). How to use t-SNE effectively. *Distill*.
+  should (still) use DBSCAN. *ACM Transactions on Database Systems*, *42*(3), Artículo 19.
+  https://doi.org/10.1145/3068335
+- Schwarz, G. (1978). Estimating the dimension of a model. *The Annals of Statistics*, *6*(2), 461–464.
+  https://doi.org/10.1214/aos/1176344136
+- van der Maaten, L. y Hinton, G. (2008). Visualizing data using t-SNE. *Journal of Machine Learning Research*,
+  *9*(86), 2579–2605.
+- Wattenberg, M., Viégas, F. y Johnson, I. (2016). How to use t-SNE effectively. *Distill*, *1*(10), e2.
   https://doi.org/10.23915/distill.00002
