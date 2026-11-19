@@ -31,6 +31,7 @@ GMM: Path = MODELS / "gmm.joblib"
 PCA: Path = MODELS / "pca.joblib"
 JSON_METRICAS: Path = MODELS / "metricas.json"
 JSON_SEGMENTOS: Path = MODELS / "segmentos.json"
+JSON_VALIDACION: Path = MODELS / "validacion.json"
 PARQUET_SEGMENTADOS: Path = DATA_PROCESSED / "clientes_segmentados.parquet"
 
 # Semilla única para todo proceso aleatorio.
