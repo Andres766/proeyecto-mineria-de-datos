@@ -14,6 +14,10 @@ con validación, perfilamiento, estrategias de marketing y un dashboard web en S
 - **Modelo final: K-Means con k = {k_final}** sobre recency, frecuencia, ticket promedio y productos distintos (log1p,
   recorte p1–p99 y estandarización). Silhouette {final_silhouette}; estabilidad mediana {final_estabilidad_mediana} y
   {final_estabilidad_p10} en el peor 10 % de 50 submuestras.
+- **Exactitud con datos de prueba:** entrenado sin ver a un grupo de clientes, el modelo les asigna el mismo segmento
+  que el modelo final en el **{val_reasignacion}** de los casos (validación cruzada de {val_n_pliegues} pliegues). Un
+  árbol de decisión aprende los segmentos con un **{val_arbol_prueba}** de exactitud en prueba y un bosque aleatorio con
+  un **{val_bosque_prueba}** (partición {val_pct_entrenamiento} / {val_pct_prueba}).
 - **Segmentos:**
 
   | Segmento | % clientes | % ingresos |
@@ -79,32 +83,35 @@ pip install -r requirements-dev.txt
 # Windows (PowerShell): $env:PYTHONPATH = "src"    ·    Linux/macOS: export PYTHONPATH=src
 python -m segmentacion.carga        # descarga el dataset (UCI) y lo guarda en parquet
 python -m segmentacion.limpieza     # limpieza y bitácora
-jupyter nbconvert --to notebook --execute --inplace notebooks/01_eda.ipynb notebooks/02_features.ipynb notebooks/03_modelado.ipynb notebooks/04_perfiles.ipynb
+jupyter nbconvert --to notebook --execute --inplace notebooks/01_eda.ipynb notebooks/02_features.ipynb notebooks/03_modelado.ipynb notebooks/04_perfiles.ipynb notebooks/05_validacion.ipynb
 python -m segmentacion.reportes     # informe, guía de sustentación, guion y este README (cifras calculadas)
 python scripts/exportar_informe.py  # informe en Word y PDF (el PDF requiere Microsoft Word)
 pytest                              # {n_pruebas} pruebas
 ```
 
-Los notebooks se ejecutan en orden: el 04 completa el archivo de clientes segmentados que genera el 03.
+Los notebooks se ejecutan en orden: el 04 completa el archivo de clientes segmentados que genera el 03, y el 05 mide la
+exactitud con datos de prueba sobre ese archivo.
 
 ## Estructura
 
 ```
 app/                Inicio.py + pages/ (Streamlit multipágina)
 data/processed/     transacciones limpias, devoluciones, bitácora, clientes con variables y segmentos
-models/             preprocesadores, K-Means, GMM, PCA, núcleos de DBSCAN y métricas/segmentos en JSON
-notebooks/          01_eda · 02_features · 03_modelado · 04_perfiles (ejecutados, con salidas)
+models/             preprocesadores, K-Means, GMM, PCA, núcleos de DBSCAN y métricas, segmentos y validación en JSON
+notebooks/          01_eda · 02_features · 03_modelado · 04_perfiles · 05_validacion (ejecutados, con salidas)
 reports/            INFORME (md, docx, pdf), GUIA_SUSTENTACION, GUION_DEMO, figures/ y plantillas/
 scripts/            exportación del informe a Word/PDF
 src/segmentacion/   carga, limpieza, features, modelado, evaluacion, perfilamiento, catalogo, prediccion, reportes
-tests/              pytest: limpieza, features, modelado, perfilamiento, predicción, app y reportes
+tests/              pytest: limpieza, features, modelado, evaluación, perfilamiento, predicción, app y reportes
 Dockerfile          alternativa de despliegue
 ```
 
 ## Documentos
 
 - [Informe final](reports/INFORME.md), también en [Word](reports/INFORME.docx) y [PDF](reports/INFORME.pdf).
-- [Guía de sustentación](reports/GUIA_SUSTENTACION.md): conceptos explicados y 25 preguntas con respuesta.
+- [Guía de sustentación](reports/GUIA_SUSTENTACION.md): conceptos explicados y {n_preguntas_guia} preguntas con respuesta.
+- [Resumen para la exposición](reports/RESUMEN_EXPOSICION.md) ([PDF](reports/RESUMEN_EXPOSICION.pdf)): lo esencial, la exactitud y
+  los ajustes, y preguntas probables con respuestas cortas.
 - [Guion de la demo](reports/GUION_DEMO.md): presentación de la app en 5–7 minutos.
 - [Guía de despliegue](DESPLIEGUE.md): Streamlit Community Cloud paso a paso y Docker.
 
