@@ -13,6 +13,10 @@ Los VIP son el {s3_pct_clientes} de los clientes y generan el {s3_pct_ingresos} 
 {ck_clientes} **cuentas clave** que por sí solas suman el {ck_pct_ingresos} de los ingresos. Cada segmento tiene
 estrategias con acción, momento y KPI. Todo está en una app web.
 
+¿Funciona con clientes nuevos? Sí: entrenado sin ver a un grupo de clientes, el modelo les asigna el mismo segmento que
+el modelo final en el **{val_reasignacion}** de los casos, y un árbol de decisión reconoce los segmentos con un
+**{val_arbol_prueba}** de exactitud en datos de prueba.
+
 ## 2. Conceptos explicados con sencillez
 
 **RFM.** Recency (cuántos días hace de la última compra), Frequency (cuántas facturas) y Monetary (cuánto gastó en
@@ -68,6 +72,27 @@ No importa cómo se llamen los grupos, solo quién va con quién.
 **Estabilidad por remuestreo.** Repetimos el clustering 50 veces con el 80 % de los clientes elegidos al azar y medimos
 con el ARI si salen los mismos grupos. Si cambian mucho, los segmentos no son fiables.
 
+**Exactitud (accuracy).** Porcentaje de casos bien clasificados. Necesita una respuesta correcta con la que comparar,
+por eso es la métrica típica de los problemas **supervisados** (por ejemplo, predecir si un cliente vuelve a comprar).
+
+**Entrenamiento y prueba.** Se separan los datos: con unos se entrena el modelo y con los otros, que el modelo nunca vio,
+se mide. Medir con los mismos datos del entrenamiento da cifras infladas.
+
+**Validación cruzada (k pliegues).** Se parte el entrenamiento en k trozos; se entrena con k − 1 y se mide con el que
+queda, rotando hasta que todos han sido de prueba una vez. Sirve para elegir hiperparámetros sin tocar el conjunto de
+prueba.
+
+**Matriz de confusión, precisión, sensibilidad y F1.** La matriz cruza el segmento real con el predicho. La precisión
+es, de los que el modelo puso en un segmento, cuántos lo eran; la sensibilidad (recall), de los que eran de un segmento,
+cuántos encontró; el F1 combina ambas.
+
+**Árbol de decisión y bosque aleatorio.** Un árbol hace preguntas sucesivas («¿más de 4 facturas?») hasta llegar a una
+respuesta; se puede leer como reglas. Un bosque aleatorio entrena cientos de árboles con variaciones y vota: es más
+exacto pero menos explicable.
+
+**Búsqueda en rejilla (GridSearch).** Probar todas las combinaciones de hiperparámetros de una lista y quedarse con la
+de mejor resultado en validación cruzada.
+
 ## 3. Decisiones clave del proyecto (resumen)
 
 | Decisión | Qué se hizo | Por qué |
@@ -82,6 +107,7 @@ con el ARI si salen los mismos grupos. Si cambian mucho, los segmentos no son fi
 | GMM | `reg_covar` = {reg_covar} | Con el valor por defecto los componentes degeneraban |
 | DBSCAN | Solo para marcar atípicos | No hay grupos separados por densidad |
 | t-SNE | Solo para visualizar | No conserva distancias ni tamaños |
+| Exactitud | Reasignación con {val_n_pliegues} pliegues y clasificadores con partición {val_pct_entrenamiento} / {val_pct_prueba} | No hay etiqueta real: se mide si los segmentos se reproducen en clientes no vistos |
 
 ## 4. Preguntas probables y respuestas
 
@@ -186,49 +212,108 @@ partición de esos clientes con la del modelo completo. El ARI vale 1 si las par
 lo mismo que por azar. Usamos submuestras sin reemplazo y no bootstrap con reemplazo porque los duplicados alteran la
 densidad y sesgan a DBSCAN; así todos los algoritmos se evalúan igual.
 
-**16. ¿Qué pasó con GMM y qué es `reg_covar`?**
+**16. ¿Cuál es la exactitud de su modelo?**
+- **La aclaración:** la exactitud clásica compara con una respuesta real, y en clustering no existe un "segmento
+  verdadero" de cada cliente. Por eso no se calcula sobre los clusters, sino con clientes que el modelo no vio al
+  entrenar.
+- **Exactitud de reasignación: {val_reasignacion}.** Reentrenamos todo (preprocesado y K-Means) sin un 20 % de los
+  clientes y les asignamos segmento: coincide con el modelo final en el {val_reasignacion} de los casos (validación
+  cruzada de {val_n_pliegues} pliegues, entre {val_reasignacion_min} y {val_reasignacion_max}). Es lo que hace la app con
+  un cliente nuevo.
+- **Exactitud de un clasificador: {val_arbol_prueba}.** Un árbol de decisión entrenado con el {val_pct_entrenamiento} de
+  los clientes acierta el segmento del {val_arbol_prueba} de los {val_n_prueba} clientes de prueba; un bosque aleatorio,
+  el {val_bosque_prueba}.
+- **Por qué no se compara con la exactitud de un modelo supervisado (por ejemplo, un 79 %):** en un problema
+  supervisado la exactitud depende de lo predecible que sea la
+  realidad (si un cliente pagará, si volverá…). Nuestras cifras miden otra cosa: que los segmentos son **reproducibles**
+  con datos nuevos y **explicables** con reglas. Si piden una sola cifra: "el modelo clasifica clientes nuevos con un
+  {val_reasignacion} de coincidencia".
+
+**17. ¿Qué pruebas hicieron para validar el modelo?**
+1. **Métricas internas:** silhouette {final_silhouette}, Davies-Bouldin {final_davies_bouldin} y Calinski-Harabasz
+   {final_calinski_harabasz}.
+2. **Estabilidad:** 50 submuestras del 80 %, ARI mediano {final_estabilidad_mediana} y {final_estabilidad_p10} en el
+   peor 10 %.
+3. **Robustez:** ARI {final_ari_descuantizado} al repartir al azar los empates de la frecuencia.
+4. **Concordancia** con el baseline RFM y entre algoritmos (matriz de ARI).
+5. **Entrenamiento y prueba:** reasignación con validación cruzada ({val_reasignacion}) y clasificadores con partición
+   {val_pct_entrenamiento} / {val_pct_prueba} ({val_arbol_prueba} el árbol, {val_bosque_prueba} el bosque).
+6. **Validación de negocio:** perfiles distintos e interpretables y estrategias con KPI medible.
+7. **Pruebas del código:** {n_pruebas} pruebas automáticas con `pytest` (limpieza, variables, modelado, exactitud,
+   clasificación de clientes nuevos y la app).
+
+**18. Si las etiquetas del árbol salen del propio K-Means, ¿no es circular?**
+El árbol no demuestra que los segmentos sean "verdaderos": demuestra que son **reproducibles** con reglas sencillas sobre
+las variables y en clientes que no vio. Si los segmentos fueran ruido o cortes arbitrarios, un árbol evaluado en datos
+de prueba fallaría. Además no es automático: K-Means corta en el espacio transformado y el árbol corta con preguntas
+sobre las variables originales; con profundidad 3 solo llega al {val_arbol3_prueba}. La prueba más directa es la
+reasignación ({val_reasignacion}), que no usa ningún otro modelo.
+
+**19. ¿Qué ajustes de hiperparámetros hicieron?**
+La tabla completa ({n_ajustes} ajustes) está en el informe y en la app. Los principales:
+- **Preprocesado:** log1p, StandardScaler frente a RobustScaler y winsorizado p1–p99.
+- **K-Means:** k de 2 a 10 (elegido {k_final}) y 10 inicializaciones k-means++.
+- **GMM:** 4 tipos de covarianza × k de 2 a 10 por BIC, y `reg_covar` = {reg_covar}.
+- **DBSCAN:** `eps` = {eps} por el codo y `min_samples` = {min_samples}.
+- **t-SNE:** perplexity 5, 30, 50 y 100.
+- **Árbol de decisión:** búsqueda en rejilla de {val_n_combinaciones} combinaciones; ganó profundidad
+  {val_arbol_profundidad} con mínimo {val_arbol_min_hoja} cliente por hoja.
+
+**20. ¿Cómo evitaron el sobreajuste?**
+Los hiperparámetros se eligieron solo con validación cruzada dentro del entrenamiento, y el conjunto de prueba se usó
+una única vez al final. La curva de profundidad lo muestra: en entrenamiento el árbol llega al
+{val_arbol_entrenamiento_max}, pero en validación se estanca en torno al {val_arbol_cv}. Más profundidad solo memoriza.
+La exactitud en prueba ({val_arbol_prueba}) es casi igual a la de validación cruzada, señal de que la estimación es
+fiable.
+
+**21. ¿Qué segmentos se confunden más y por qué?**
+**{val_peor_segmento}** (precisión {val_peor_precision}, sensibilidad {val_peor_recall}). Es el segmento intermedio y
+limita con los otros tres. Los errores son siempre entre vecinos: ningún VIP se confunde con un pequeño ocasional ni al
+revés. Encaja con lo que sabemos: los clientes forman un continuo y las fronteras no son nítidas.
+
+**22. ¿Qué pasó con GMM y qué es `reg_covar`?**
 Un tercio de los clientes tiene exactamente frequency = 1, así que en esa dimensión están todos en el mismo punto. GMM
 ponía una campana justo ahí con varianza casi cero, su densidad se disparaba y el BIC bajaba artificialmente hasta
 {bic_degenerado}: el modelo describía el empate, no a los clientes. `reg_covar` es una constante que se suma a la
 varianza para que no llegue a 0. Buscamos el mínimo valor que elimina la degeneración ({reg_covar}). Aun así GMM quedó
 peor que K-Means: silhouette {gmm_silhouette} y estabilidad mediana {gmm_estabilidad_mediana}.
 
-**17. ¿Por qué DBSCAN no sirvió para segmentar? ¿Cómo eligieron sus parámetros?**
+**23. ¿Por qué DBSCAN no sirvió para segmentar? ¿Cómo eligieron sus parámetros?**
 `min_samples` = {min_samples} (dos veces el número de variables, la regla habitual) y `eps` = {eps} (el codo del gráfico
 de distancias al vecino número {min_samples}). Con eps pequeños parecía haber clusters, pero eran **falsas zonas
 densas**: rebanadas de clientes con el mismo número de facturas, que parecen más densos porque comparten coordenada
 (distancia mediana {kdist_f1} frente a {kdist_resto}). Con el eps del codo, por encima del hueco entre niveles, queda un
 único grupo y {atipicos} atípicos. Por eso DBSCAN aporta la marca de atípicos y no una segmentación.
 
-**18. ¿Qué es HDBSCAN y por qué lo descartaron?**
+**24. ¿Qué es HDBSCAN y por qué lo descartaron?**
 Es DBSCAN sin `eps` fijo: se queda con los grupos más persistentes. Siempre devolvía dos grupos, que eran exactamente
 "una compra" frente a "más de una". Al repartir la frecuencia al azar dentro de su intervalo de redondeo esa estructura
 desaparecía (ARI {hdbscan_ari_descuantizado}): era un artefacto de los empates.
 
-**19. ¿Para qué usaron PCA y por qué no clusterizaron sobre las componentes?**
+**25. ¿Para qué usaron PCA y por qué no clusterizaron sobre las componentes?**
 Para interpretar (PC1 = actividad / valor, PC2 = tamaño del pedido; juntas explican el {pca_2}) y para dibujar los
 mapas 2D y 3D. Con solo cuatro variables no hace falta reducir dimensiones, y quedarse con 2 o 3 componentes no mejoraba
 el clustering. Su silhouette solo "mejoraba" si se medía en el espacio reducido, lo que es engañoso.
 
-**20. ¿Por qué dicen que t-SNE no sirve para validar?**
+**26. ¿Por qué dicen que t-SNE no sirve para validar?**
 Porque t-SNE solo intenta conservar quién es vecino de quién; las distancias entre grupos y el tamaño aparente de cada
 grupo no significan nada, y cambian con la perplexity. Lo comprobamos: el segmento más disperso en realidad aparece como
 el más compacto en el mapa. Lo usamos solo para mostrar que los segmentos ocupan zonas coherentes, y la app lo advierte.
 
-**21. ¿Qué aporta el clustering frente al RFM por quintiles?**
+**27. ¿Qué aporta el clustering frente al RFM por quintiles?**
 Coinciden en lo evidente: el {s3_rfm_valor} de los VIP son Campeones o Leales en RFM. Pero RFM ve casi iguales a los dos
 grupos de ocasionales ({s0_rfm_riesgo} y {s1_rfm_riesgo} hibernando o en riesgo), y K-Means los separa por el tamaño del
 pedido. Esa diferencia importa: {s1_nombre} genera el {s1_pct_ingresos} de los ingresos y {s0_nombre} el
 {s0_pct_ingresos}, así que merecen inversiones de reactivación muy distintas. Además, el clustering no depende de cortes
 arbitrarios en una variable con muchos empates.
 
-**22. ¿Qué son las cuentas clave?**
+**28. ¿Qué son las cuentas clave?**
 Clientes VIP que DBSCAN marca como atípicos y que gastan al menos la mediana del resto de VIP ({ck_umbral}). Son
 {ck_clientes} clientes ({ck_pct_clientes}) que generan el {ck_pct_ingresos} de los ingresos: compran {ck_frequency} veces
 con un ticket de {ck_ticket}. Exigimos ese gasto mínimo porque DBSCAN marca rarezas en cualquier dirección y la
 estrategia de gestor dedicado solo se justifica por volumen.
 
-**23. ¿Cómo garantizan que la app clasifica a un cliente nuevo igual que en el entrenamiento?**
+**29. ¿Cómo garantizan que la app clasifica a un cliente nuevo igual que en el entrenamiento?**
 La app no reentrena: carga el mismo preprocesador (log1p, recorte p1–p99 con los límites del entrenamiento y
 escalado) y el mismo K-Means. Para la marca de cuenta clave, un cliente nuevo es atípico si no tiene ningún punto núcleo
 de DBSCAN a distancia ≤ eps, la misma regla con la que DBSCAN etiqueta a los puntos frontera. Las pruebas comprueban que
@@ -236,12 +321,12 @@ este proceso reproduce el segmento de los {clientes} clientes y exactamente las 
 valores extremos se recortan sin errores y que los inválidos dan un mensaje claro. La app se probó también en un entorno
 con solo las dependencias de despliegue.
 
-**24. ¿Cómo sabrían si las estrategias funcionan? ¿Por qué no pusieron metas numéricas?**
+**30. ¿Cómo sabrían si las estrategias funcionan? ¿Por qué no pusieron metas numéricas?**
 Cada estrategia tiene un KPI y su **línea base** actual calculada con los datos (por ejemplo, el porcentaje de VIP sin
 compras en 90 días). La forma correcta de medir es aplicar la acción a una parte del segmento, dejar otra parte como
 grupo de control y comparar el KPI contra la línea base. No pusimos metas ("+10 %") porque serían cifras inventadas.
 
-**25. ¿Cuáles son las principales limitaciones?**
+**31. ¿Cuáles son las principales limitaciones?**
 - Excluimos las compras sin cliente identificado.
 - Con un solo año de datos no podemos separar del todo estacionalidad y crecimiento, ni confirmar que los compradores de
   temporada repitan cada Navidad.
