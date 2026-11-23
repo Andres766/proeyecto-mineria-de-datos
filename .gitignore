@@ -16,9 +16,3 @@ Thumbs.db
 
 # Streamlit
 .streamlit/secrets.toml
-
-# Configuración local de Claude Code (personal)
-.claude/settings.local.json
-
-# Contexto local del asistente (no se versiona)
-CLAUDE.md
