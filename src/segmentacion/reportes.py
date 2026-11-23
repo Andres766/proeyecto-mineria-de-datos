@@ -30,6 +30,7 @@ DOCUMENTOS = {
     "GUIA_SUSTENTACION.md": config.RAIZ / "reports" / "GUIA_SUSTENTACION.md",
     "GUION_DEMO.md": config.RAIZ / "reports" / "GUION_DEMO.md",
     "RESUMEN_EXPOSICION.md": config.RAIZ / "reports" / "RESUMEN_EXPOSICION.md",
+    "DOCUMENTACION_TECNICA.md": config.RAIZ / "DOCUMENTACION_TECNICA.md",
     "README.md": config.RAIZ / "README.md",
 }
 
@@ -454,11 +455,19 @@ def _cifras_pruebas(c: dict) -> None:
     c["n_preguntas_guia"] = str(len(re.findall(r"^\*\*\d+\. ", guia, flags=re.MULTILINE)))
 
 
+def _datos_equipo(c: dict) -> None:
+    """Integrantes y docente, leídos de la portada (``reports/portada.json``) para no repetirlos a mano."""
+    portada = json.loads((config.RAIZ / "reports" / "portada.json").read_text(encoding="utf-8"))
+    nombres = portada["autores"]
+    c["integrantes"] = nombres[0] if len(nombres) == 1 else f"{', '.join(nombres[:-1])} y {nombres[-1]}"
+    c["docente"] = portada["docente"]
+
+
 def calcular_cifras() -> dict[str, str]:
     """Calcula todas las cifras que usan las plantillas (como texto ya formateado)."""
     cifras: dict[str, str] = {}
     for paso in (_cifras_eda, _cifras_features, _cifras_modelos, _cifras_segmentos, _cifras_validacion,
-                 _cifras_pruebas):
+                 _cifras_pruebas, _datos_equipo):
         paso(cifras)
     return cifras
 
