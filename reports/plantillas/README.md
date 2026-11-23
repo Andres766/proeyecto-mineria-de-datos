@@ -7,6 +7,8 @@ con validación, perfilamiento, estrategias de marketing y un dashboard web en S
 
 **App publicada:** https://segmentacion-retail-ucc.streamlit.app
 
+**Equipo:** {integrantes}. **Docente:** {docente}. Universidad Cooperativa de Colombia.
+
 ## Resultados clave
 
 - **{clientes} clientes** analizados tras limpiar {filas_originales} líneas de factura. Las cancelaciones se emparejan
@@ -113,6 +115,7 @@ Dockerfile          alternativa de despliegue
 - [Resumen para la exposición](reports/RESUMEN_EXPOSICION.md) ([PDF](reports/RESUMEN_EXPOSICION.pdf)): lo esencial, la exactitud y
   los ajustes, y preguntas probables con respuestas cortas.
 - [Guion de la demo](reports/GUION_DEMO.md): presentación de la app en 5–7 minutos.
+- [Documentación técnica](DOCUMENTACION_TECNICA.md): arquitectura, módulos, flujo de datos, artefactos y pruebas.
 - [Guía de despliegue](DESPLIEGUE.md): Streamlit Community Cloud paso a paso y Docker.
 
 ## Datos
